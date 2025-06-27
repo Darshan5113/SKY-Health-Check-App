@@ -843,7 +843,145 @@ def sm_departments_list(request):
 ########################## Engineer Panel #######################
 
 def engineers_dashboard(request):
-    return render(request, 'engineer_dashboard.html')
+    """
+    Engineer dashboard with real data from models.
+    
+    Fetches statistics and recent activities for the logged-in engineer.
+    """
+    try:
+        # Get user from session
+        user_id = request.session.get('user_id')
+        if not user_id:
+            return redirect('engineer-login')
+        
+        user = User.objects.get(user_id=user_id)
+        
+        # Get total number of sessions
+        total_sessions = Session.objects.count()
+        
+        # Get total votes cast by this user
+        user_votes = Vote.objects.filter(user=user).count()
+        
+        # Get team members count (if user has a team)
+        team_members_count = 0
+        if user.team:
+            team_members_count = User.objects.filter(team=user.team).count()
+        
+        # Get user's recent votes (last 5) for recent activities
+        recent_votes = Vote.objects.filter(user=user).order_by('-created_at')[:5]
+        
+        # Get user's recent profile updates (simulated - using user creation date)
+        profile_updated = user.created_at
+        
+        # Get active session info
+        active_session_id = request.session.get('engineer_active_session_id')
+        active_session = None
+        if active_session_id:
+            try:
+                active_session = Session.objects.get(session_id=active_session_id)
+            except Session.DoesNotExist:
+                pass
+        
+        # ========================================
+        # RECENT ACTIVITIES LOGIC
+        # ========================================
+        # This section creates a dynamic list of user activities
+        # by combining different types of events and sorting them by time
+        
+        recent_activities = []
+        
+        # 1. Add recent votes to activities
+        # Convert each vote into an activity item with details
+        for vote in recent_votes:
+            recent_activities.append({
+                'type': 'vote',  # Activity type for categorization
+                'title': f'Vote submitted for {vote.team.name}',  # Human-readable title
+                'description': f'Voted {vote.vote_value}/5 for {vote.card.title}',  # Detailed description
+                'time': vote.created_at,  # Timestamp for sorting
+                'color': 'success'  # Bootstrap color class for UI
+            })
+        
+        # 2. Add active session info if user has an active session
+        # This shows current participation status
+        if active_session:
+            recent_activities.append({
+                'type': 'session',
+                'title': f'Session activated: {active_session.date.strftime("%B %d, %Y")}',
+                'description': 'You are currently participating in this session',
+                'time': active_session.created_at,
+                'color': 'warning'  # Warning color to indicate active state
+            })
+        
+        # 3. Add profile update info (using user creation date as last update)
+        # This provides a baseline activity for new users
+        recent_activities.append({
+            'type': 'profile',
+            'title': 'Profile information updated',
+            'description': 'Your profile details were last updated',
+            'time': profile_updated,
+            'color': 'info'  # Info color for profile-related activities
+        })
+        
+        # Sort activities by time (most recent first)
+        # This ensures the timeline shows activities in chronological order
+        recent_activities.sort(key=lambda x: x['time'], reverse=True)
+        
+        # ========================================
+        # TEAM PROGRESS LOGIC
+        # ========================================
+        # This section calculates the team's overall performance score
+        # based on recent voting activity
+        
+        team_progress = 0  # Default value if no team or votes exist
+        
+        if user.team:
+            # Get the 10 most recent votes for the user's team
+            # This provides a recent performance snapshot
+            team_votes = Vote.objects.filter(team=user.team).order_by('-created_at')[:10]
+            
+            if team_votes:
+                # Calculate average vote score
+                # Sum all vote values and divide by number of votes
+                total_score = sum(vote.vote_value for vote in team_votes)
+                avg_score = total_score / len(team_votes)
+                
+                # Convert to percentage (assuming 5 is the maximum vote value)
+                # Formula: (average_score / max_possible_score) * 100
+                team_progress = round((avg_score / 5) * 100)
+                
+                # Example calculation:
+                # If team has votes: [4, 3, 5, 4, 3] (5 votes total)
+                # Total score = 4 + 3 + 5 + 4 + 3 = 19
+                # Average score = 19 / 5 = 3.8
+                # Team progress = (3.8 / 5) * 100 = 76%
+        
+        # Prepare context data for template
+        context = {
+            'user': user,
+            'total_sessions': total_sessions,
+            'user_votes': user_votes,
+            'team_members_count': team_members_count,
+            'team_progress': team_progress,
+            'recent_activities': recent_activities[:4],  # Show only 4 most recent activities
+            'active_session': active_session,
+        }
+        
+        return render(request, 'engineer_dashboard.html', context)
+        
+    except User.DoesNotExist:
+        return redirect('engineer-login')
+    except Exception as e:
+        # Fallback with default values if there's an error
+        # This ensures the dashboard still loads even if there are data issues
+        context = {
+            'total_sessions': 0,
+            'user_votes': 0,
+            'team_members_count': 0,
+            'team_progress': 0,
+            'recent_activities': [],
+            'active_session': None,
+        }
+        return render(request, 'engineer_dashboard.html', context)
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
