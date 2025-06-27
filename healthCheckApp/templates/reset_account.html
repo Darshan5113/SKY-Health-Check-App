@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <!-- Logo -->
+    <div class="text-center my-4 py-3">
+        <a href="/"><img src="{% static 'images/logo.png' %}" alt="Logo" width="20%" height="20%"></a>
+    </div>
+
+    <!-- Registration Form -->
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <h3>Reset Password</h3>
+            <div class="p-4 shadow rounded-4 bg-white">
+                <form action="" method="post" class="row">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email address</label>
+                        <input type="email" name="email" id="email" class="form-control" placeholder="Enter email address" required>
+                    </div>
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary px-4" value="verify">Verify</button>
+                        {% if error %}
+                        <script>alert("{{ error }}");</script>
+                        {% endif %}
+                    </div>
+                    <div class="text-start">
+                        <p>Remember the password? <a href="/admins">Log In</a></p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends 'sm_base.html' %}
+
+{% block title %}Senior Manager Dashboard{% endblock %}
+
+{% block content %}
+  <h2>Senior Manager Dashboard</h2>
+  <p>Senior Manager Dashboard</p>
+  {% if error %}
+      <script>alert("{{ error }}");</script>
+    {% elif success %}
+      <script>alert("{{ success }}");</script>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends 'team_leader_base.html' %}
+{% block content %}
+  <h2>Generate Progress Summary</h2>
+
+  <!-- Alert messages -->
+  {% if messages %}
+  <div style="margin-bottom: 20px;">
+      {% for message in messages %}
+          <div class="alert 
+              {% if message.tags == 'success' %}alert-success
+              {% elif message.tags == 'error' %}alert-danger
+              {% else %}alert-info{% endif %} 
+              alert-dismissible fade show" 
+              style="padding: 10px; border-radius: 5px; margin-bottom: 10px; border: 1px solid #ccc;" 
+              role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+      {% endfor %}
+  </div>
+{% endif %}
+
+
+  <form method="post">
+    {% csrf_token %}
+    <label for="session">Select Session:</label>
+    <select name="session_id" class="form-control" required>
+      {% for session in sessions %}
+        <option value="{{ session.session_id }}" {% if session.session_id == selected_session_id %}selected{% endif %}>
+          {{ session.date }}
+        </option>
+      {% endfor %}
+    </select>
+
+    <button type="submit" class="btn btn-primary mt-3">Generate Summary</button>
+  </form>
+
+  {% if summaries %}
+    <hr>
+    <h3 class="mt-4">Summary Results</h3>
+
+    <p><strong>Team:</strong> {{ team.name }}</p>
+
+    <table class="table table-bordered mt-3">
+      <thead>
+        <tr>
+          <th>Session</th>
+          <th>Card</th>
+          <th>Vote</th>
+          <th>Trend</th>
+          <th>Generated At</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for summary in summaries %}
+          <tr>
+            <td>{{ selected_session.date }}</td>
+            <td>{{ summary.card }}</td>
+            <td>
+              <span class="badge 
+                  {% if summary.overall_vote == 'Green' %}bg-success
+                  {% elif summary.overall_vote == 'Amber' %}bg-warning text-dark
+                  {% else %}bg-danger{% endif %}">
+                  {{ summary.overall_vote }} 
+                </span>
+            </td>
+            <td>
+              {% if summary.progress_trend %}
+                <span class="text-success">⬆ Up</span>
+              {% else %}
+                <span class="text-danger">⬇ Down</span>
+              {% endif %}
+            </td>
+            <td>{{ summary.created_at|date:"Y-m-d H:i" }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+{% endblock %}

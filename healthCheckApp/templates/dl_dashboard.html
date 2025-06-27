@@ -1,0 +1,13 @@
+{% extends 'dl_base.html' %}
+
+{% block title %}Department Leader Dashboard{% endblock %}
+
+{% block content %}
+  <h2>Department Leader Dashboard</h2>
+  <p>Department Leader Dashboard</p>
+  {% if error %}
+      <script>alert("{{ error }}");</script>
+    {% elif success %}
+      <script>alert("{{ success }}");</script>
+    {% endif %}
+{% endblock %}

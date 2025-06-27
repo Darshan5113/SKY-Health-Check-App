@@ -1,0 +1,105 @@
+{% extends 'sm_base.html' %}
+
+{% block content %}
+<div style="display: flex; justify-content: center;  min-height: 100vh;">
+    <div class="container" style="max-width: 800px; width: 100%;">
+        <h3 class="text-center mb-4">Welcome, {{ user.name }} (Senior Manager)</h3>
+
+        {% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            <div class="alert 
+                {% if message.tags == 'success' %}alert-success
+                {% elif message.tags == 'error' %}alert-danger
+                {% else %}alert-info{% endif %}"
+                style="padding: 10px; border-radius: 5px; margin-bottom: 10px; border: 1px solid #ccc;">
+                {{ message }}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+
+        <form method="post" action="{% url 'senior-manager-summary' %}">
+            {% csrf_token %}
+            
+            <!-- Form Fields in a Row (Flexbox) -->
+            <div style="display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap;">
+
+                <!-- Department Filter -->
+                <div class="form-group" style="flex: 1;">
+                    <label for="department_id">Select Department:</label>
+                    <select name="department_id" id="department_id" class="form-control" onchange="this.form.submit()" required>
+                        <option value="">-- Select Department --</option>
+                        {% for dept in departments %}
+                            <option value="{{ dept.department_id }}" 
+                                {% if dept.department_id|stringformat:"s" == selected_department_id|stringformat:"s" %} selected {% endif %}>
+                                {{ dept.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Team Filter -->
+                <div class="form-group" style="flex: 1;">
+                    <label for="team_id">Select Team:</label>
+                    <select name="team_id" id="team_id" class="form-control" onchange="this.form.submit()">
+                        <option value="">-- All Teams --</option>
+                        {% for team in teams %}
+                            <option value="{{ team.team_id }}" {% if team.team_id|stringformat:"s" == selected_team_id|stringformat:"s" %}selected{% endif %}>
+                                {{ team.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Session Filter -->
+                <div class="form-group" style="flex: 1;">
+                    <label for="session_id">Select Session:</label>
+                    <select name="session_id" id="session_id" class="form-control" onchange="this.form.submit()" required>
+                        <option value="">-- Select Session --</option>
+                        {% for session in sessions %}
+                            <option value="{{ session.session_id }}" 
+                                {% if session.session_id|stringformat:"s" == selected_session_id %} selected {% endif %}>
+                                {{ session.date }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Health Card Filter -->
+                <div class="form-group" style="flex: 1;">
+                    <label for="card">Select Health Card:</label>
+                    <select name="card" id="card" class="form-control" onchange="this.form.submit()" required>
+                        <option value="">-- Select Health Card --</option>
+                        {% for card in cards %}
+                            <option value="{{ card.card_id }}" 
+                                {% if card.card_id|stringformat:"s" == selected_card_id|stringformat:"s" %} selected {% endif %}>
+                                {{ card.title }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+        </form>
+
+        <div class="summary-section text-center mt-5">
+            {% if chart_img %}
+                <h3>Summary for {{ selected_department.name }} Department</h3>
+                <img src="data:image/png;base64,{{ chart_img }}" alt="Vote Chart" />
+            {% elif no_votes %}
+                <h3>No Votes Available for Selected Filters</h3>
+            {% else %}
+                <h3>Select filters to view summaries</h3>
+            {% endif %}
+        </div>
+
+        {% if no_votes %}
+            <div class="alert alert-warning text-center mt-3">
+                No votes recorded for this department and session yet.
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

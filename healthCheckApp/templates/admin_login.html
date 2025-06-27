@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <!-- Logo -->
+    <div class="text-center my-4 py-3">
+        <img src="{% static 'images/admin_logo.png' %}" alt="Logo" width="20%" height="20%">
+    </div>
+
+    <!-- Registration Form -->
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="p-4 shadow rounded-4 bg-white">
+                <form action="" method="post" class="row">
+                    {% csrf_token %}
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="usernameoremail" class="form-label">Username or email addres</label>
+                            <input type="text" name="usernameoremail" id="usernameoremail" class="form-control" placeholder="Enter username or email address" required>
+                        </div>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <label for="password" class="form-label">Password</label>
+                                <a href="/reset_account">Forgot Password?</a>
+                            </div>
+                            <input type="password" name="password" id="password" class="form-control" placeholder="Enter password" required>
+                        </div>
+                        <div class="text-start">
+                            <button type="submit" class="btn btn-primary px-4">Login</button>
+                            {% if error %}
+                            <script>alert("{{ error }}");</script>
+                            {% elif success %}
+                            <script>alert("{{ success }}");</script>
+                            {% endif %}
+                          </div>
+                        <div class="text-start">
+                            <p>Don't have an account? <a href="/">Register</a></p>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <ul class="list-unstyled">
+                            <li><a href="/admins">Admin login page</a></li>
+                            <li><a href="/engineer">Engineer login page</a></li>
+                            <li><a href="/tl">Team Leader login page</a></li>
+                            <li><a href="/dl">Department Leader login page</a></li>
+                            <li><a href="/sm">Senior manager login page</a></li>
+                        </ul>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Optional Greeting -->
+    {% if name %}
+    <h1 class="text-center mt-4">Hello {{ name }}!!!</h1>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends 'engineer_base.html' %}
+ {% block title %}Manage Sessions{% endblock%} {% block content %}
+<h2>Manage Sessions</h2>
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            <div class="alert 
+                {% if message.tags == 'success' %}alert-success
+                {% elif message.tags == 'error' %}alert-danger
+                {% else %}alert-info{% endif %}"
+                style="padding: 10px; border-radius: 5px; margin-bottom: 10px; border: 1px solid #ccc;">
+                {{ message }}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<!-- Active Session -->
+<div class="mt-4">
+  <h4>Active Session</h4>
+  {% if active_session %}
+  <div class="card shadow mb-3">
+    <div class="card-body">
+      <p class="card-text">Date: {{ active_session.date }}</p>
+      <p class="card-text">Created At: {{ active_session.created_at }}</p>
+      <form method="post" action="{% url 'engineer-deactivate-session' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-warning">Deactivate</button>
+      </form>
+    </div>
+  </div>
+  {% else %}
+  <p class="text-muted">No active session selected.</p>
+  {% endif %}
+</div>
+
+<!-- Sessions List -->
+<!-- All Sessions -->
+<div class="mt-4">
+  <h3>Sessions List</h3>
+  <div class="row" id="userList">
+    {% for session in sessions %}
+    <div class="col-md-4 mb-4">
+      <div class="card shadow">
+        <div class="card-body">
+          <h5 class="card-title">Session {{ forloop.counter }}</h5>
+          <p class="card-text">Date: {{ session.date }}</p>
+          <p class="card-text">Created At: {{ session.created_at }}</p>
+
+          {% if session.is_expired %}
+          <button class="btn btn-secondary btn-sm" disabled>
+            Session Expired
+          </button>
+
+          {% elif active_session and session.session_id == active_session.session_id %}
+          <p class="text-success fw-bold">✅ Already Active</p>
+
+          
+          <form method="post" action="{% url 'engineer-deactivate-session' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-warning btn-sm">
+              Deactivate
+            </button>
+          </form>
+
+          {% else %}
+          <form
+            method="post"
+            action="{% url 'engineer-select-session' session.session_id %}"
+          >
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success btn-sm">
+              Select Session
+            </button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <p class="text-muted">No session found.</p>
+    {% endfor %}
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends 'dl_base.html' %}
+
+{% block title %}View Teams{% endblock %}
+
+{% block content %}
+  <h2>View Healthcards</h2>
+  <p>View healthcards here</p>
+  <div class="mt-4">
+    <h3>Health cards List</h3>
+    <div class="row" id="userList">
+      {% for healthcard in healthcards %}
+      <div class="col-md-4 mb-4">
+        <a href="#" class="card shadow text-decoration-none text-dark">
+          <div class="card-body">
+            <h5 class="card-title">Health Card Title: {{ healthcard.title }}</h5>
+            <p class="card-text">
+              Description:
+              {{ healthcard.description }}
+            </p>
+            <p class="card-text">
+              Created At:
+              {{ healthcard.created_at }}
+            </p>
+          </div>
+        </a>
+      </div>
+      {% empty %}
+        <p class="text-muted">No health card found.</p>
+      {% endfor %}
+    </div>
+    {% if error %}
+      <script>alert("{{ error }}");</script>
+    {% elif success %}
+      <script>alert("{{ success }}");</script>
+    {% endif %}
+  </div>
+{% endblock %}

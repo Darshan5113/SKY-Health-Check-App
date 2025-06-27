@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <h1 class="text-center my-4">User List</h1>
+    <div class="row">
+        {% for user in users %}
+        <div class="col-md-4 mb-4">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h5 class="card-title">{{ user.name }} {{ user.id }}</h5>
+                    <h6 class="card-subtitle mb-2 text-muted">{{ user.role }}</h6>
+                    <p class="card-text">Username: {{ user.username }}</p>
+                    <p class="card-text">Email: {{ user.email }}</p>
+                    
+                    <p class="card-text">
+                        Team: 
+                        {% if user.team %}
+                            {{ user.team.name }}
+                        {% else %}
+                            No Team
+                        {% endif %}
+                    </p>
+
+                    <p class="card-text">
+                        Department: 
+                        {% if user.department %}
+                            {{ user.department.name }}
+                        {% else %}
+                            No Department
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <p>No users found.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,138 @@
+{% extends 'sm_base.html' %}
+
+{% block content %}
+<div style="display: flex; justify-content: center; min-height: 40vh;">
+    <div class="container" style="max-width: 900px; width: 100%;">
+        <h3 class="text-center">Progress Summary - Senior Manager</h3>
+
+        {% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            <div class="alert 
+                {% if message.tags == 'success' %}alert-success
+                {% elif message.tags == 'error' %}alert-danger
+                {% else %}alert-info{% endif %}"
+                style="padding: 10px; border-radius: 5px; margin-bottom: 10px; border: 1px solid #ccc;">
+                {{ message }}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+
+        <form method="post" action="{% url 'senior-manager-progress-summary' %}">
+            {% csrf_token %}
+            
+            <div style="display: flex; justify-content: space-between; gap: 20px;">
+                <!-- Department Filter -->
+                <div class="mb-3" style="flex: 1;">
+                    <label for="department_id">Department:</label>
+                    <select name="department_id" id="department_id" onchange="this.form.submit()">
+                        <option value="">-- All Departments --</option>
+                        {% for dept in departments %}
+                            <option value="{{ dept.department_id }}" {% if dept.department_id|stringformat:"s" == selected_department_id|stringformat:"s" %} selected {% endif %}>{{ dept.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Team Filter -->
+                <div class="mb-3" style="flex: 1;">
+                    <label for="team_id">Team:</label>
+                    <select name="team_id" id="team_id" onchange="this.form.submit()">
+                        <option value="">-- All Teams --</option>
+                        {% for team in teams %}
+                            <option value="{{ team.team_id }}" {% if team.team_id|stringformat:"s" == selected_team_id|stringformat:"s" %} selected {% endif %}>{{ team.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Session Filter -->
+                <div class="mb-3" style="flex: 1;">
+                    <label for="session_id">Session:</label>
+                    <select name="session_id" id="session_id" onchange="this.form.submit()">
+                        <option value="">-- All Sessions --</option>
+                        {% for session in sessions %}
+                            <option value="{{ session.session_id }}" {% if session.session_id|stringformat:"s" == selected_session_id %} selected {% endif %}>{{ session.date }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Card Filter -->
+                <div class="mb-3" style="flex: 1;">
+                    <label for="card_id">Health Card:</label>
+                    <select name="card_id" id="card_id" onchange="this.form.submit()">
+                        <option value="">-- All Cards --</option>
+                        {% for card in cards %}
+                            <option value="{{ card.card_id }}" {% if card.card_id|stringformat:"s" == selected_card_id|stringformat:"s" %} selected {% endif %}>{{ card.title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </form>
+
+        <!-- Summary Table -->
+        {% if progress_summaries %}
+            <div class="table-responsive mt-4">
+                <table class="table table-bordered table-striped text-center">
+                    <thead>
+                        <tr>
+                            <th>Department</th>
+                            <th>Team</th>
+                            <th>Session</th>
+                            <th>Card</th>
+                            <th>Vote</th>
+                            <th>Progress</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for summary in progress_summaries %}
+                            <tr>
+                                <td>
+                                    {% if summary.team and summary.team.department %}
+                                        {{ summary.team.department.name }}
+                                    {% elif summary.department %}
+                                        {{ summary.department.name }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if summary.team %}
+                                        {{ summary.team.name }}
+                                    {% else %}
+                                        <strong>Department Level</strong>
+                                    {% endif %}
+                                </td>
+                                <td>{{ summary.session.date }}</td>
+                                <td>{{ summary.card.title }}</td>
+                                <td>
+                                    <span class="badge 
+                                        {% if summary.overall_vote == 'Green' %}bg-success
+                                        {% elif summary.overall_vote == 'Amber' %}bg-warning text-dark
+                                        {% else %}bg-danger{% endif %}">
+                                        {{ summary.overall_vote }} 
+                                      </span>
+                                  </td>
+                                  <td>
+                                    {% if summary.progress_trend %}
+                                      <span class="text-success">⬆ Up</span>
+                                    {% else %}
+                                      <span class="text-danger">⬇ Down</span>
+                                    {% endif %}
+                                  </td>
+                                <td>{{ summary.created_at|date:"Y-m-d H:i" }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                    
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-info text-center mt-4">
+                No progress summaries available for the selected filters.
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

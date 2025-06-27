@@ -1,0 +1,34 @@
+{% extends 'sm_base.html' %}
+
+{% block title %}View Departments{% endblock %}
+
+{% block content %}
+  <h2>View Departments</h2>
+  <p>View departments here</p>
+  <!-- User List -->
+<div class="mt-4">
+    <h3>Departments List</h3>
+    <div class="row" id="userList">
+      {% for department in departments %}
+      <div class="col-md-4 mb-4">
+        <a href="#" class="card shadow text-decoration-none text-dark">
+          <div class="card-body">
+            <h5 class="card-title">Department Name: {{ department.name }}</h5>
+            <p class="card-text">
+                Created At:
+                {{ department.created_at }}
+              </p>
+          </div>
+        </a>
+      </div>
+      {% empty %}
+        <p class="text-muted">No departments found.</p>
+      {% endfor %}
+    </div>
+    {% if error %}
+      <script>alert("{{ error }}");</script>
+    {% elif success %}
+      <script>alert("{{ success }}");</script>
+    {% endif %}
+  </div>
+  {% endblock %}

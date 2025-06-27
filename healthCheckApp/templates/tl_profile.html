@@ -1,0 +1,36 @@
+{% extends 'team_leader_base.html' %}
+{% load static %}
+
+{% block content %}
+
+{% if messages %}
+  <div style="margin-bottom: 20px;">
+      {% for message in messages %}
+          <div class="alert 
+              {% if message.tags == 'success' %}alert-success
+              {% elif message.tags == 'error' %}alert-danger
+              {% else %}alert-info{% endif %}"
+              style="padding: 10px; border-radius: 5px; margin-bottom: 10px; border: 1px solid #ccc;">
+              {{ message }}
+          </div>
+      {% endfor %}
+  </div>
+{% endif %}
+
+    <div class="profile-container">
+        <div class="profile-avatar" style="text-align: center;">
+            <img src="{% static 'images/Avtar.jpg' %}" alt="Avatar" class="avatar" style="width: 150px; height: 150px; border-radius: 50%;">
+        </div>
+
+        <div class="profile-details" style="text-align: center; margin-top: 20px;">
+            <h3>{{ user.first_name }} {{ user.last_name }}</h3>
+            <p><strong>Email:</strong> {{ user.email }}</p>
+            <p><strong>Role:</strong> {{ user.role }}</p>
+
+        </div>
+
+        <div class="update-profile-btn" style="text-align: center; margin-top: 20px;">
+            <a href="{% url 'team-leader-profile-update' %}" class="btn btn-primary">Update Profile</a>
+        </div>
+    </div>
+{% endblock %}

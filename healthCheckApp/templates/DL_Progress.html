@@ -1,0 +1,111 @@
+{% extends 'dl_base.html' %}
+{% block content %}
+  <h2>Generate Progress Summary</h2>
+
+  <!-- Alert messages -->
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    <label for="session">Select Session:</label>
+    <select name="session_id" class="form-control" required>
+      {% for session in sessions %}
+        <option value="{{ session.session_id }}" {% if session.session_id == selected_session_id %}selected{% endif %}>
+          {{ session.date }}
+        </option>
+      {% endfor %}
+    </select>
+
+    <button type="submit" class="btn btn-primary mt-3">Generate Summary</button>
+  </form>
+
+  {% if summaries %}
+    <hr>
+    <h3 class="mt-4">Team-wise Progress Summary</h3>
+    <table class="table table-bordered mt-3">
+      <thead>
+        <tr>
+          <th>Team</th>
+          <th>Session</th>
+          <th>Card</th>
+          <th>Vote</th>
+          <th>Trend</th>
+          <th>Generated At</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for summary in summaries %}
+          <tr>
+            <td>{{ summary.team.name }}</td>
+            <td>{{ selected_session.date }}</td>
+            <td>{{ summary.card }}</td>
+            <td>
+              <span class="badge 
+                  {% if summary.overall_vote == 'Green' %}bg-success
+                  {% elif summary.overall_vote == 'Amber' %}bg-warning text-dark
+                  {% else %}bg-danger{% endif %}">
+                  {{ summary.overall_vote }}
+              </span>
+            </td>
+            <td>
+              {% if summary.progress_trend %}
+                <span class="text-success">⬆ Up</span>
+              {% else %}
+                <span class="text-danger">⬇ Down</span>
+              {% endif %}
+            </td>
+            <td>{{ summary.created_at|date:"Y-m-d H:i" }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+
+  {% if dept_summaries %}
+    <hr>
+    <h3 class="mt-4">Overall Department Progress Summary</h3>
+    <table class="table table-bordered mt-3">
+      <thead>
+        <tr>
+          <th>Session</th>
+          <th>Card</th>
+          <th>Vote</th>
+          <th>Trend</th>
+          <th>Generated At</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for summary in dept_summaries %}
+          <tr>
+            <td>{{ selected_session.date }}</td>
+            <td>{{ summary.card }}</td>
+            <td>
+              <span class="badge 
+                  {% if summary.overall_vote == 'Green' %}bg-success
+                  {% elif summary.overall_vote == 'Amber' %}bg-warning text-dark
+                  {% else %}bg-danger{% endif %}">
+                  {{ summary.overall_vote }}
+              </span>
+            </td>
+            <td>
+              {% if summary.progress_trend %}
+                <span class="text-success">⬆ Up</span>
+              {% else %}
+                <span class="text-danger">⬇ Down</span>
+              {% endif %}
+            </td>
+            <td>{{ summary.created_at|date:"Y-m-d H:i" }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+
+{% endblock %}

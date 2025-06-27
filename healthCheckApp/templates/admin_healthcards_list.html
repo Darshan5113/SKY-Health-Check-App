@@ -1,0 +1,83 @@
+{% extends 'admin_base.html' %}
+
+{% block title %}Manage Health cards{% endblock %}
+
+{% block content %}
+  <h2>Manage Health cards</h2>
+  <p>Manage health cards here</p>
+
+  <!-- Button to Open the Modal -->
+  <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+    Add Health card
+  </button>
+
+  <!-- User List -->
+<div class="mt-4">
+    <h3>Health cards List</h3>
+    <div class="row" id="userList">
+      {% for healthcard in healthcards %}
+      <div class="col-md-4 mb-4">
+        <a href="#" class="card shadow text-decoration-none text-dark">
+          <div class="card-body">
+            <h5 class="card-title">Health Card Title: {{ healthcard.title }}</h5>
+            <p class="card-text">
+              Description:
+              {{ healthcard.description }}
+            </p>
+            <p class="card-text">
+              Created At:
+              {{ healthcard.created_at }}
+            </p>
+            <!-- Delete Button -->
+            <form method="post" action="{% url 'admin-delete-healthcard' healthcard.card_id %}" style="display:inline;">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+            </form>
+          </div>
+        </a>
+      </div>
+      {% empty %}
+        <p class="text-muted">No health card found.</p>
+      {% endfor %}
+    </div>
+    {% if error %}
+      <script>alert("{{ error }}");</script>
+    {% elif success %}
+      <script>alert("{{ success }}");</script>
+    {% endif %}
+  </div>
+  
+
+  <!-- Modal for Adding Department -->
+  <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addUserModalLabel">Add Health Card</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="addUserForm" method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="healthcardtitle" class="form-label">Healthcard Title</label>
+                <input type="text" name="healthcardtitle" id="healthcardtitle" class="form-control" placeholder="Enter healthcard title" required>
+            </div>
+            <div class="mb-3">
+                <label for="healthcarddescription" class="form-label">Description</label>
+                <input type="text" name="healthcarddescription" id="healthcarddescription" class="form-control" placeholder="Enter description" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Save Healthcard</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  document.getElementById('addUserForm').addEventListener('submit', function(event) {
+      // Keep modal opening code
+      $('#addUserModal').modal('show');
+  });
+  </script>
+  {% endblock %}

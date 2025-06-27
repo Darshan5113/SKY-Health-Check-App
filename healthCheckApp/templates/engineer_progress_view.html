@@ -1,0 +1,136 @@
+{% extends 'engineer_base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">View Your Progress</h2>
+
+    <!-- View Toggle Buttons -->
+    <div class="mb-4">
+        <a href="?view=team" class="btn btn-outline-primary {% if view_mode == 'team' %}active{% endif %}">Team Progress</a>
+        <a href="?view=history" class="btn btn-outline-secondary {% if view_mode == 'history' %}active{% endif %}">Your Vote History</a>
+    </div>
+
+    {% if view_mode == 'team' %}
+        <form method="get" class="mb-4">
+            <input type="hidden" name="view" value="team">
+            <div class="row">
+                <div class="col-md-5">
+                    <label for="session">Select Session:</label>
+                    <select name="session_id" class="form-control" required>
+                        {% for session in sessions %}
+                            <option value="{{ session.session_id }}" {% if session.session_id == selected_session_id %}selected{% endif %}>
+                                {{ session.date }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-5">
+                    <label for="card">Select Health Card:</label>
+                    <select name="card_id" class="form-control" required>
+                        {% for card in cards %}
+                            <option value="{{ card.card_id }}" {% if card.card_id == selected_card_id %}selected{% endif %}>
+                                {{ card }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">View</button>
+                </div>
+            </div>
+        </form>
+
+        {% if show_results %}
+            {% if summary %}
+                <div class="card shadow p-3 mb-4">
+                    <h5><strong>Team:</strong> {{ team.name }}</h5>
+                    <p><strong>Card:</strong> {{ selected_card }}</p>
+                    <p><strong>Session:</strong> {{ selected_session.date }}</p>
+
+                    <p>
+                        <strong>Team Vote:</strong>
+                        <span class="badge 
+                            {% if summary.overall_vote == 'Green' %}bg-success
+                            {% elif summary.overall_vote == 'Yellow' %}bg-warning text-dark
+                            {% else %}bg-danger{% endif %}">
+                            {{ summary.overall_vote }}
+                        </span>
+                    </p>
+
+                    <p>
+                        <strong>Progress Trend:</strong>
+                        {% if summary.progress_trend %}
+                            <span class="text-success">⬆ Up</span>
+                        {% else %}
+                            <span class="text-danger">⬇ Down</span>
+                        {% endif %}
+                    </p>
+
+                    <!-- {% if engineer_vote %}
+                        <p><strong>Your Vote:</strong>
+                            {% if engineer_vote.vote_value == 3 %}
+                                <span class="badge bg-danger">Red</span>
+                            {% elif engineer_vote.vote_value == 2 %}
+                                <span class="badge bg-warning text-dark">Yellow</span>
+                            {% elif engineer_vote.vote_value == 1 %}
+                                <span class="badge bg-success">Green</span>
+                            {% else %}
+                                Unknown
+                            {% endif %}
+                        </p>
+                    {% else %} -->
+
+                        <p class="text-muted">You did not vote for this card in this session.</p>
+                    {% endif %}
+                </div>
+            {% else %}
+                <div class="alert alert-warning">
+                    Team Leader has not generated progress for the selected session and card yet.
+                </div>
+            {% endif %}
+        {% endif %}
+
+        {% elif view_mode == 'history' %}
+        <div class="card p-3 shadow">
+            <h5 class="mb-3">Your Voting History</h5>
+            {% if vote_history %}
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Team</th>
+                            <th>Session Date</th>
+                            <th>Card</th>
+                            <th>Your Vote</th>
+                            <th>Voted At</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for vote in vote_history %}
+                            <tr>
+                                <td>{{ vote.user.team.name }}</td>
+                                <td>{{ vote.session.date }}</td>
+                                <td>{{ vote.card }}</td>
+                                <td>
+                                    {% if vote.vote_value == 3 %}
+                                        <span class="badge bg-danger">Red</span>
+                                    {% elif vote.vote_value == 2 %}
+                                        <span class="badge bg-warning text-dark">Yellow</span>
+                                    {% elif vote.vote_value == 1 %}
+                                        <span class="badge bg-success">Green</span>
+                                    {% else %}
+                                        Unknown
+                                    {% endif %}
+                                </td>
+                                <td>{{ vote.created_at|date:"Y-m-d H:i" }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="text-muted">No voting history found.</p>
+            {% endif %}
+        </div>
+    {% endif %}
+    
+</div>
+{% endblock %}

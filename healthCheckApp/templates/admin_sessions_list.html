@@ -1,0 +1,76 @@
+{% extends 'admin_base.html' %}
+
+{% block title %}Manage Sessions{% endblock %}
+
+{% block content %}
+  <h2>Manage Sessions</h2>
+  <p>Manage sessions here</p>
+
+  <!-- Button to Open the Modal -->
+  <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+    Add Session
+  </button>
+
+  <!-- Sessions List -->
+  <div class="mt-4">
+    <h3>Sessions List</h3>
+    <div class="row" id="userList">
+      {% for session in sessions %}
+      <div class="col-md-4 mb-4">
+        <a href="#" class="card shadow text-decoration-none text-dark">
+          <div class="card-body">
+            <h5 class="card-title">Session {{ forloop.counter }}</h5>
+            <p class="card-text">
+              Date: {{ session.date }}
+            </p>
+            <p class="card-text">
+              Created At: {{ session.created_at }}
+            </p>
+            <!-- Delete Button -->
+            <form method="post" action="{% url 'admin-delete-session' session.session_id %}" style="display:inline;">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+            </form>
+          </div>
+        </a>
+      </div>
+      {% empty %}
+        <p class="text-muted">No session found.</p>
+      {% endfor %}
+    </div>
+    {% if error %}
+      <script>alert("{{ error }}");</script>
+    {% elif success %}
+      <script>alert("{{ success }}");</script>
+    {% endif %}
+  </div>
+
+  <!-- Modal for Adding Session -->
+  <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addUserModalLabel">Add Session</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="addUserForm" method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="sessiondate" class="form-label">Session Date</label>
+                <input type="datetime-local" name="sessiondate" id="sessiondate" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Save Session</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  document.getElementById('addUserForm').addEventListener('submit', function(event) {
+      // Keep modal opening code
+      $('#addUserModal').modal('show');
+  });
+  </script>
+{% endblock %}

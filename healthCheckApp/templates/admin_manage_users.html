@@ -1,0 +1,161 @@
+{% extends 'admin_base.html' %}
+
+{% block title %}Manage Users{% endblock %}
+
+{% block content %}
+  <h2>Manage Users</h2>
+  <p>Manage engineers, team leaders, department leaders or senior managers here</p>
+
+  <!-- Button to Open the Modal -->
+  <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+    Add User
+  </button>
+
+  <!-- User List -->
+<div class="mt-4">
+    <h3>User List</h3>
+    <div class="row row-cols-1 row-cols-md-3 g-4" id="userList">
+      {% for user in users %}
+      <div class="col">
+        <a href="{% url 'admin-users-profile' user.user_id %}" class="card h-100 shadow text-decoration-none text-dark">
+          <div class="card-body d-flex flex-column">
+            <h5 class="card-title">{{ user.name }}</h5>
+            <h6 class="card-subtitle mb-2 text-muted">{{ user.role }}</h6>
+            <hr class="my-2 border-secondary">
+            <p class="card-text">Username: {{ user.username }}</p>
+            <p class="card-text">Email: {{ user.email }}</p>
+            {% if user.role == 'Engineer' or user.role == 'Team Leader' %}
+              <p class="card-text">
+                Team:
+                {% if user.team %}
+                  {{ user.team.name }}
+                {% else %}
+                  No Team
+                {% endif %}
+              </p>
+            {% endif %}
+  
+            {% if user.role == 'Engineer' or user.role == 'Team Leader' or user.role == 'Department Leader' %}
+            <p class="card-text">
+              Department:
+              {% if user.department %}
+                {{ user.department.name }}
+              {% else %}
+                No Department
+              {% endif %}
+            </p>
+            {% endif %}
+            <!-- Delete Button -->
+            <form method="post" action="{% url 'admin-delete-user' user.user_id %}" style="display:inline;" class="mt-auto">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+            </form>
+          </div>
+        </a>
+      </div>
+      {% empty %}
+        <p class="text-muted">No users found.</p>
+      {% endfor %}
+    </div>
+    {% if error %}
+      <script>alert("{{ error }}");</script>
+    {% elif success %}
+      <script>alert("{{ success }}");</script>
+    {% endif %}
+  </div>
+  
+
+  <!-- Modal for Adding User -->
+  <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addUserModalLabel">Add User</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="addUserForm" method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="name" class="form-label">Name</label>
+                <input type="text" name="name" id="name" class="form-control" placeholder="Enter name" required>
+            </div>
+            <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" name="username" id="username" class="form-control" placeholder="Enter username" required>
+            </div>
+            <div class="mb-3">
+                <label for="email" class="form-label">Email address</label>
+                <input type="email" name="email" id="email" class="form-control" placeholder="Enter email address" required>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" name="password" id="password" class="form-control" placeholder="Enter password" required>
+            </div>
+            <div class="mb-3">
+                <label for="confirmpassword" class="form-label">Confirm password</label>
+                <input type="password" name="confirmpassword" id="confirmpassword" class="form-control" placeholder="Re-enter password" required>
+            </div>
+            <div class="mb-3">
+              <label for="role" class="form-label">Select Role</label>
+              <select class="form-select" id="role" name="role" required onchange="handleRoleChange()">
+                <option value="" disabled selected>Select your role</option>
+                <option value="Engineer">Engineer</option>
+                <option value="Team Leader">Team Leader</option>
+                <option value="Department Leader">Department Leader</option>
+                <option value="Senior Manager">Senior Manager</option>
+              </select>
+            </div>
+            <div id="teamDepartmentFields">
+              <div class="mb-3" id="teamField" style="display: none;">
+                <label for="team" class="form-label">Select Team</label>
+                <select class="form-select" id="team" name="team">
+                  <option value="" disabled selected>Select team</option>
+                  {% for team in teams %}
+                    <option value="{{ team.team_id }}">{{ team.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="mb-3" id="departmentField" style="display: none;">
+                <label for="department" class="form-label">Select Department</label>
+                <select class="form-select" id="department" name="department">
+                  <option value="" disabled selected>Select department</option>
+                  {% for department in departments %}
+                    <option value="{{ department.department_id }}">{{ department.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Save User</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function handleRoleChange() {
+      const role = document.getElementById('role').value;
+      const teamField = document.getElementById('teamField');
+      const departmentField = document.getElementById('departmentField');
+      
+      // Reset fields
+      teamField.style.display = 'none';
+      departmentField.style.display = 'none';
+      
+      if (role === 'Engineer' || role === 'Team Leader') {
+        teamField.style.display = 'block';
+        departmentField.style.display = 'block';
+      } else if (role === 'Department Leader') {
+        departmentField.style.display = 'block';
+      }
+    }
+  </script>
+
+  <script>
+  document.getElementById('addUserForm').addEventListener('submit', function(event) {
+      // Keep modal opening code
+      $('#addUserModal').modal('show');
+  });
+  </script>
+  {% endblock %}

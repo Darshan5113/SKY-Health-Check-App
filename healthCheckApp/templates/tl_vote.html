@@ -1,0 +1,72 @@
+{% extends 'team_leader_base.html' %}
+{% block title %}Submit Vote{% endblock %}
+
+{% block content %}
+<div class="container">
+  {% if messages %}
+  <div style="margin-bottom: 20px;">
+      {% for message in messages %}
+          <div class="alert 
+              {% if message.tags == 'success' %}alert-success
+              {% elif message.tags == 'error' %}alert-danger
+              {% else %}alert-info{% endif %}"
+              style="padding: 10px; border-radius: 5px; margin-bottom: 10px; border: 1px solid #ccc;">
+              {{ message }}
+          </div>
+      {% endfor %}
+  </div>
+{% endif %}
+  <h2 class="mb-4">Team Leader Voting</h2>
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label for="team" class="form-label">Select Team</label>
+      <select name="team" id="team" class="form-select" required>
+        <option value="" disabled selected>-- Choose Team --</option>
+        {% for team in teams %}
+          <option value="{{ team.team_id }}">{{ team.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label for="card" class="form-label">Select Health Card</label>
+      <select name="card" id="card" class="form-select" required>
+        <option value="" disabled selected>-- Choose Health Card --</option>
+        {% for card in cards %}
+          <option value="{{ card.card_id }}">{{ card.title }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Vote</label><br>
+      <div class="form-check form-check-inline">
+        <input class="form-check-input" type="radio" name="vote_value" value="1" required>
+        <label class="form-check-label">🟢 Green</label>
+      </div>
+      <div class="form-check form-check-inline">
+        <input class="form-check-input" type="radio" name="vote_value" value="2">
+        <label class="form-check-label">🟡 Amber</label>
+      </div>
+      <div class="form-check form-check-inline">
+        <input class="form-check-input" type="radio" name="vote_value" value="3">
+        <label class="form-check-label">🔴 Red</label>
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label for="progress_note" class="form-label">Progress Note</label>
+      <select name="progress_note" id="progress_note" class="form-select" required>
+        <option value="" disabled selected>-- Choose Progress --</option>
+        <option value="Up trend">Up trend</option>
+        <option value="Down trend">Down trend</option>
+        <option value="No change">No change</option>
+      </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Submit Vote</button>
+  </form>
+</div>
+{% endblock %}

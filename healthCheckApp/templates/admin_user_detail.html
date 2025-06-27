@@ -1,0 +1,115 @@
+{% extends 'admin_base.html' %}
+
+{% block title %}{{ user.name }} | {{ user.role }} - Profile{% endblock %}
+
+{% block content %}
+<h2>{{ user.name }} ({{ user.role }})</h2>
+<p><strong>Username:</strong> {{ user.username }}</p>
+<p><strong>Email:</strong> {{ user.email }}</p>
+
+{% if user.role == 'Engineer' or user.role == 'Team Leader' %}
+<p><strong>Team:</strong>
+    {% if user.team %}
+        {{ user.team.name }}
+    {% else %}
+        No Team
+    {% endif %}
+</p>
+{% endif %}
+
+{% if user.role == 'Engineer' or user.role == 'Team Leader' or user.role == 'Department Leader' %}
+<p><strong>Department:</strong>
+    {% if user.department %}
+        {{ user.department.name }}
+    {% else %}
+        No Department
+    {% endif %}
+</p>
+{% endif %}
+
+<!-- Form to Change Role, Team, and Department -->
+<form method="post" action="{% url 'admin-update-user' user.user_id %}" id="userUpdateForm">
+    {% csrf_token %}
+    <!-- Role -->
+    <div class="mb-3">
+        <label for="role" class="form-label">Change Role</label>
+        <select class="form-select" id="role" name="role" required onchange="updateFormFields()">
+            <option value="" disabled {% if not user.role %}selected{% endif %}>Select new role</option>
+            <option value="Engineer" {% if user.role == 'Engineer' %}selected{% endif %}>Engineer</option>
+            <option value="Team Leader" {% if user.role == 'Team Leader' %}selected{% endif %}>Team Leader</option>
+            <option value="Department Leader" {% if user.role == 'Department Leader' %}selected{% endif %}>Department Leader</option>
+            <option value="Senior Manager" {% if user.role == 'Senior Manager' %}selected{% endif %}>Senior Manager</option>
+        </select>
+    </div>
+    
+    <!-- Department -->
+    <div class="mb-3" id="departmentField">
+        <label for="department" class="form-label">Change Department</label>
+        <select class="form-select" id="department" name="department" required>
+            <option value="" {% if not user.department %}selected{% endif %}>Select new department</option>
+            {% for department in departments %}
+                <option value="{{ department.name }}" {% if user.department and user.department.name == department.name %}selected{% endif %}>{{ department.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    
+    <!-- Team -->
+    <div class="mb-3" id="teamField">
+        <label for="team" class="form-label">Change Team</label>
+        <select class="form-select" id="team" name="team" required>
+            <option value="" {% if not user.team %}selected{% endif %} disabled>Select new team</option>
+            {% for team in teams %}
+                <option value="{{ team.name }}" {% if user.team and user.team.name == team.name %}selected{% endif %}>{{ team.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    
+
+    <button type="submit" class="btn btn-primary">Update User</button>
+</form>
+
+<a href="{% url 'admin-manage-user' %}" class="btn btn-secondary mt-3">Back to User List</a>
+
+<script>
+function updateFormFields() {
+    const role = document.getElementById('role').value;
+    const teamField = document.getElementById('teamField');
+    const departmentField = document.getElementById('departmentField');
+    const teamSelect = document.getElementById('team');
+    const departmentSelect = document.getElementById('department');
+
+    // Reset required attributes
+    teamSelect.required = false;
+    departmentSelect.required = false;
+
+    // Show/hide and set required based on role
+    switch(role) {
+        case 'Engineer':
+        case 'Team Leader':
+            teamField.style.display = 'block';
+            departmentField.style.display = 'block';
+            teamSelect.required = true;
+            departmentSelect.required = true;
+            break;
+        case 'Department Leader':
+            teamField.style.display = 'none';
+            departmentField.style.display = 'block';
+            teamSelect.value = '';
+            departmentSelect.required = true;
+            break;
+        case 'Senior Manager':
+            teamField.style.display = 'none';
+            departmentField.style.display = 'none';
+            teamSelect.value = '';
+            departmentSelect.value = '';
+            break;
+        default:
+            teamField.style.display = 'block';
+            departmentField.style.display = 'block';
+    }
+}
+
+// Initialize form fields on page load
+document.addEventListener('DOMContentLoaded', updateFormFields);
+</script>
+{% endblock %}

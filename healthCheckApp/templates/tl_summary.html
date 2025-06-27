@@ -1,0 +1,93 @@
+{% extends 'team_leader_base.html' %}
+{% block content %}
+
+<div class="text-center mt-4">
+
+  {% if messages %}
+  <div style="margin-bottom: 20px;">
+      {% for message in messages %}
+          <div class="alert 
+              {% if message.tags == 'success' %}alert-success
+              {% elif message.tags == 'error' %}alert-danger
+              {% else %}alert-info{% endif %}"
+              style="padding: 10px; border-radius: 5px; margin-bottom: 10px; border: 1px solid #ccc;">
+              {{ message }}
+          </div>
+      {% endfor %}
+  </div>
+{% endif %}
+  <form method="POST">
+    {% csrf_token %}
+
+    <div class="mb-3">
+      <label for="session">Select Session:</label>
+      <select name="session_id" id="session" onchange="this.form.submit()" required>
+          {% for s in sessions %}
+              <option value="{{ s.session_id }}" {% if s.session_id == selected_session_id %}selected{% endif %}>
+                  {{ s.date }}
+              </option>
+          {% endfor %}
+      </select>
+    </div>
+    <div class="mb-3">
+      <button type="submit" name="view_type" value="individual" class="btn btn-outline-primary {% if view_type == 'individual' %}active{% endif %}">My Summary</button>
+      <button type="submit" name="view_type" value="team" class="btn btn-outline-success {% if view_type == 'team' %}active{% endif %}">Team Summary</button>
+    </div>
+
+    {% if view_type == 'team' %}
+      <label for="card">Select Health Card:</label>
+      <select name="card" id="card" onchange="this.form.submit()">
+        <option value="">-- All Cards --</option>
+        {% for card in cards %}
+          <option value="{{ card.card_id }}" {% if selected_card_id == card.card_id|stringformat:"s" %}selected{% endif %}>
+            {{ card.title }}
+          </option>
+        {% endfor %}
+      </select>
+    {% endif %}
+  </form>
+</div>
+
+
+{% if view_type == 'individual' and chart_img_individual %}
+  <div class="text-center mt-4">
+    <h4>Your Vote Summary ({{ user.username }})</h4>
+    <img src="data:image/png;base64,{{ chart_img_individual }}" style="max-width: 70%;">
+  </div>
+{% endif %}
+
+{% if view_type == 'team' and selected_card_id and chart_img_team_card %}
+  <div class="text-center mt-4">
+    <h4>Team Summary for Selected Card</h4>
+    <img src="data:image/png;base64,{{ chart_img_team_card }}" style="max-width: 80%;">
+  </div>
+{% endif %}
+
+{% if view_type == 'team' and not selected_card_id and chart_img_team_all %}
+  <div class="text-center mt-4">
+    <h4>Team Summary for All Cards (Department: {{ user.department.name }})</h4>
+    <img src="data:image/png;base64,{{ chart_img_team_all }}" style="max-width: 80%;">
+  </div>
+{% endif %}
+
+<!-- Team Summary Fallback Message -->
+{% if view_type == 'team' and not chart_img_team_all and not chart_img_team_card %}
+  <div class="alert alert-warning mt-4 text-center">
+    No team votes available for the selected session.
+  </div>
+{% endif %}
+
+
+<!-- Individual Summary Fallback Message -->
+{% if view_type == 'individual' and not chart_img_individual %}
+  <div class="alert alert-warning mt-4 text-center">
+    No {{user.username}} votes available for the selected session.
+  </div>
+{% endif %}
+
+{% if no_sessions %}
+  <div class="alert alert-warning mt-4 text-center">No sessions available for your team.</div>
+{% endif %}
+
+
+{% endblock %}

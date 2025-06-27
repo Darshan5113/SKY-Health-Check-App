@@ -1,0 +1,81 @@
+{% extends 'dl_base.html' %}
+{% block content %}
+
+<div class="text-center mt-4">
+  <form method="POST">
+    {% csrf_token %}
+
+<!-- Department Selector -->
+<div class="mb-3">
+    <label for="department">Select Department:</label>
+    <select name="department_id" id="department" onchange="this.form.submit()" required>
+        <option value="">-- Select Department --</option>
+        {% for dept in departments %}
+          <option value="{{ dept.department_id }}" {% if dept.department_id|stringformat:"s" == selected_department_id|stringformat:"s" %}selected{% elif dept.department_id == user.department.department_id %}selected{% endif %}>
+            {{ dept.name }}
+          </option>
+        {% endfor %}
+      </select>
+      
+  </div>
+  
+
+    <!-- Session Selector -->
+    <div class="mb-3">
+      <label for="session">Select Session:</label>
+      <select name="session_id" id="session" onchange="this.form.submit()" required>
+        <option value="">-- Select Session --</option>
+        {% for s in sessions %}
+          <option value="{{ s.session_id }}" {% if s.session_id|stringformat:"s" == selected_session_id|stringformat:"s" %}selected{% endif %}>
+            {{ s.date }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Card Selector -->
+    <div class="mb-3">
+      <label for="card">Select Health Card (Optional):</label>
+      <select name="card" id="card" onchange="this.form.submit()">
+        <option value="">-- All Cards --</option>
+        {% for card in cards %}
+          <option value="{{ card.card_id }}" {% if card.card_id|stringformat:"s" == selected_card_id|stringformat:"s" %}selected{% endif %}>
+            {{ card.title }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+  </form>
+</div>
+
+<!-- Show Department Summary for Selected Card -->
+{% if chart_img and selected_card %}
+  <div class="text-center mt-4">
+    <h4>{{ user.department.name }} Department Summary for "{{ selected_card.title }}"</h4>
+    <img src="data:image/png;base64,{{ chart_img }}" style="max-width: 80%;">
+  </div>
+{% endif %}
+
+<!-- Show Department Summary for All Cards -->
+{% if chart_img and not selected_card %}
+  <div class="text-center mt-4">
+    <h4>{{ user.department.name }} Department Summary - All Cards</h4>
+    <img src="data:image/png;base64,{{ chart_img }}" style="max-width: 90%;">
+  </div>
+{% endif %}
+
+<!-- No Votes Found -->
+{% if no_votes %}
+  <div class="alert alert-warning mt-4 text-center">
+    No votes available for the selected session{% if selected_card %} and card{% endif %}.
+  </div>
+{% endif %}
+
+<!-- No Sessions Found -->
+{% if not sessions %}
+  <div class="alert alert-warning mt-4 text-center">
+    No sessions available.
+  </div>
+{% endif %}
+
+{% endblock %}

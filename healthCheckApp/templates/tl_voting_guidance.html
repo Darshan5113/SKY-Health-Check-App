@@ -1,0 +1,78 @@
+{% extends 'team_leader_base.html' %}
+{% load static %}
+
+{% block title %}Voting Guidance{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  {% if messages %}
+  <div style="margin-bottom: 20px;">
+      {% for message in messages %}
+          <div class="alert 
+              {% if message.tags == 'success' %}alert-success
+              {% elif message.tags == 'error' %}alert-danger
+              {% else %}alert-info{% endif %}"
+              style="padding: 10px; border-radius: 5px; margin-bottom: 10px; border: 1px solid #ccc;">
+              {{ message }}
+          </div>
+      {% endfor %}
+  </div>
+{% endif %}
+  <h2 class="text-center mb-4">Voting Guidelines</h2>
+
+  <div class="card shadow p-4">
+    <!-- Green -->
+    <div class="d-flex align-items-center mb-4">
+      <img src="{% static 'images/green_vote.png' %}" alt="Green" width="40" class="me-3">
+      <div>
+        <strong>Green:</strong> Select this when the team is performing strongly in this area.
+        Everything is functioning as expected — there are no blockers, issues, or risks that require escalation.
+        The team is confident in their current processes and practices related to this health card.
+        Stakeholders are informed, work is on track, and there’s no immediate need for major changes or improvements.
+        This status reflects a healthy and sustainable condition that can be maintained going forward.
+      </div>
+    </div>
+
+    <!-- Amber -->
+    <div class="d-flex align-items-center mb-4">
+      <img src="{% static 'images/yellow_vote.png' %}" alt="Amber" width="40" class="me-3">
+      <div>
+        <strong>Amber:</strong> Select this when there are some concerns or areas for improvement.
+        While the team is making progress, there may be minor issues, blockers, or risks that require attention — but nothing critical.
+        Support or corrective action might be needed to ensure things stay on track.
+        The team is aware of the situation and actively working on it, but improvements are not yet fully realized.
+        This status indicates a warning sign, not a failure — it's a prompt to keep an eye on this area before it escalates.
+        
+        
+      </div>
+    </div>
+
+    <!-- Red -->
+    <div class="d-flex align-items-center mb-4">
+      <img src="{% static 'images/red_vote.png' %}" alt="Red" width="40" class="me-3">
+      <div>
+        <strong>Red:</strong>  Select this when the situation is critical and demands immediate attention.
+        The team is facing serious challenges, progress has stalled, or the outcomes are far from expectations.
+        There may be major blockers, unresolved issues, lack of clarity, or failure in communication and execution.
+        This status highlights a major risk or failure that cannot be ignored — urgent support, intervention, or a change in approach is required to recover.
+        Think of Red as a call to action — not to place blame, but to acknowledge the severity and initiate swift corrective measures.
+    </div>
+
+
+  </div>
+
+      <!-- Progress Note -->
+      <div class="mt-5">
+        <h5>Progress Note:</h5>
+        <div class="ms-4 mt-3">
+          <p><strong>Up Trend:</strong> Situation improving</p>
+          <p><strong>Down Trend:</strong> Getting worse</p>
+          <p><strong>No Change:</strong> Status unchanged since last session</p>
+        </div>
+      </div>
+
+  <div class="text-center mt-4">
+    <a href="{% url 'tl-vote' %}" class="btn btn-primary">I Understand</a>
+  </div>
+</div>
+{% endblock %}
