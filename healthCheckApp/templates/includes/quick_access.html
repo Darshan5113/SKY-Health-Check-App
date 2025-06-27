@@ -1,0 +1,49 @@
+<!-- Quick Access Panel - Reusable Component -->
+<div class="col-lg-5 bg-primary text-white p-4 p-lg-5 d-flex flex-column justify-content-center">
+    <div class="text-center mb-4">
+        <h4 class="fw-bold mb-3">Quick Access</h4>
+        <p class="opacity-75 mb-0">Access other login portals</p>
+    </div>
+    
+    <div class="d-grid gap-3">
+        <a href="/admins" class="btn btn-outline-light btn-lg text-start quick-access-btn {% if current_page == 'admin' %}active{% endif %}">
+            <i class="bi bi-shield-check me-3"></i>
+            <div>
+                <div class="fw-semibold">Admin Portal</div>
+                <small class="opacity-75">System administration</small>
+            </div>
+        </a>
+        
+        <a href="/engineer" class="btn btn-outline-light btn-lg text-start quick-access-btn {% if current_page == 'engineer' %}active{% endif %}">
+            <i class="bi bi-gear me-3"></i>
+            <div>
+                <div class="fw-semibold">Engineer Portal</div>
+                <small class="opacity-75">Technical operations</small>
+            </div>
+        </a>
+        
+        <a href="/tl" class="btn btn-outline-light btn-lg text-start quick-access-btn {% if current_page == 'tl' %}active{% endif %}">
+            <i class="bi bi-people me-3"></i>
+            <div>
+                <div class="fw-semibold">Team Leader</div>
+                <small class="opacity-75">Team management</small>
+            </div>
+        </a>
+        
+        <a href="/dl" class="btn btn-outline-light btn-lg text-start quick-access-btn {% if current_page == 'dl' %}active{% endif %}">
+            <i class="bi bi-building me-3"></i>
+            <div>
+                <div class="fw-semibold">Department Leader</div>
+                <small class="opacity-75">Department oversight</small>
+            </div>
+        </a>
+        
+        <a href="/sm" class="btn btn-outline-light btn-lg text-start quick-access-btn {% if current_page == 'sm' %}active{% endif %}">
+            <i class="bi bi-graph-up me-3"></i>
+            <div>
+                <div class="fw-semibold">Senior Manager</div>
+                <small class="opacity-75">Executive dashboard</small>
+            </div>
+        </a>
+    </div>
+</div> 

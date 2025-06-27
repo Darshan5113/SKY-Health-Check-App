@@ -6,198 +6,587 @@ from datetime import datetime
 
 # Create your views here.
 def register(request):
+    """
+    Handle user registration for the health check application.
+    
+    This function processes new user registrations, validates input data,
+    checks for existing users, and creates new user accounts. It supports
+    multiple user roles including Engineer and Team Leader.
+    
+    Args:
+        request: HTTP request object containing form data
+        
+    Returns:
+        Rendered template with success/error messages or redirect
+    """
     if request.method == 'POST':
-        name = request.POST.get('name')
-        username = request.POST.get('username')
-        email = request.POST.get('email')
-        password = request.POST.get('password')
-        confirmpassword = request.POST.get('confirmpassword')
-        role = request.POST.get('role')
+        try:
+            # Extract and sanitize form data from POST request
+            user_full_name = request.POST.get('name', '').strip()
+            user_username = request.POST.get('username', '').strip()
+            user_email = request.POST.get('email', '').strip().lower()
+            user_password = request.POST.get('password', '')
+            user_confirm_password = request.POST.get('confirmpassword', '')
+            user_role = request.POST.get('role', '').strip()
 
-        if User.objects.filter(username=username).exists():
-            return render(request, 'register.html', {'error': 'Username already exists!', 'name': 'Nalla'})
-        if User.objects.filter(email=email).exists():
-            return render(request, 'register.html', {'error': 'Email already exists!', 'name': 'Nalla'})
+            # Validate required fields
+            if not all([user_full_name, user_username, user_email, user_password, user_confirm_password, user_role]):
+                return render(request, 'register.html', {
+                    'error': 'All fields are required. Please fill in all the information.'
+                })
 
-        if password != confirmpassword:
-            return render(request, 'register.html', {'error': 'Passwords do not match!', 'name': 'Nalla'})
+            # Validate email format
+            if not is_valid_email(user_email):
+                return render(request, 'register.html', {
+                    'error': 'Please enter a valid email address.'
+                })
 
-        user = User.objects.create(
-            name=name,
-            username=username,
-            email=email,
-            password=password,
-            role=role,
-            team=None,
-            department=None
-        )
-        return redirect('admin-login') 
+            # Validate username format (alphanumeric and underscore only)
+            if not is_valid_username(user_username):
+                return render(request, 'register.html', {
+                    'error': 'Username can only contain letters, numbers, and underscores.'
+                })
 
+            # Validate password strength
+            password_validation_result = validate_password_strength(user_password)
+            if not password_validation_result['is_valid']:
+                return render(request, 'register.html', {
+                    'error': password_validation_result['error_message']
+                })
+
+            # Validate role selection
+            valid_roles = ['Engineer', 'Team Leader']
+            if user_role not in valid_roles:
+                return render(request, 'register.html', {
+                    'error': 'Please select a valid role.'
+                })
+
+            # Check if username already exists in database
+            if User.objects.filter(username=user_username).exists():
+                return render(request, 'register.html', {
+                    'error': f'Username "{user_username}" is already taken. Please choose a different username.'
+                })
+            
+            # Check if email already exists in database
+            if User.objects.filter(email=user_email).exists():
+                return render(request, 'register.html', {
+                    'error': f'Email "{user_email}" is already registered. Please use a different email address.'
+                })
+
+            # Validate that password and confirm password match
+            if user_password != user_confirm_password:
+                return render(request, 'register.html', {
+                    'error': 'Passwords do not match. Please make sure both passwords are identical.'
+                })
+
+            # Create new user with provided details
+            # Note: team and department are set to None initially
+            new_user = User.objects.create(
+                name=user_full_name,
+                username=user_username,
+                email=user_email,
+                password=user_password,
+                role=user_role,
+                team=None,
+                department=None
+            )
+
+            # Redirect to admin login page after successful registration
+            return redirect('admin-login')
+
+        except Exception as registration_error:
+            # Log the error for debugging
+            return render(request, 'register.html', {
+                'error': 'An unexpected error occurred during registration. Please try again or contact support.'
+            })
+
+    # If GET request, simply render the registration form
     return render(request, 'register.html')
 
+def is_valid_email(email_address):
+    """
+    Validate email address format using basic regex pattern.
+    
+    Args:
+        email_address (str): Email address to validate
+        
+    Returns:
+        bool: True if email format is valid, False otherwise
+    """
+    import re
+    email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return re.match(email_pattern, email_address) is not None
+
+def is_valid_username(username):
+    """
+    Validate username format (alphanumeric and underscore only).
+    
+    Args:
+        username (str): Username to validate
+        
+    Returns:
+        bool: True if username format is valid, False otherwise
+    """
+    import re
+    username_pattern = r'^[a-zA-Z0-9_]+$'
+    return re.match(username_pattern, username) is not None and len(username) >= 3
+
+def validate_password_strength(password):
+    """
+    Validate password strength requirements.
+    
+    Args:
+        password (str): Password to validate
+        
+    Returns:
+        dict: Contains 'is_valid' (bool) and 'error_message' (str) if validation fails
+    """
+    if len(password) < 8:
+        return {
+            'is_valid': False,
+            'error_message': 'Password must be at least 8 characters long.'
+        }
+    
+    if not any(char.isupper() for char in password):
+        return {
+            'is_valid': False,
+            'error_message': 'Password must contain at least one uppercase letter.'
+        }
+    
+    if not any(char.islower() for char in password):
+        return {
+            'is_valid': False,
+            'error_message': 'Password must contain at least one lowercase letter.'
+        }
+    
+    if not any(char.isdigit() for char in password):
+        return {
+            'is_valid': False,
+            'error_message': 'Password must contain at least one number.'
+        }
+    
+    return {
+        'is_valid': True,
+        'error_message': ''
+    }
+
 def user_list(request):
+    """
+    Display a list of all registered users in the system.
+    
+    This function retrieves all users from the database and displays them
+    in a list format. Useful for administrative purposes to view all
+    registered users and their details.
+    
+    Args:
+        request: HTTP request object
+        
+    Returns:
+        Rendered template with list of users
+    """
+    # Fetch all users from database
     users = User.objects.all()
     return render(request, 'user_list.html', {'users': users})
 
 def admin_login(request):
-    if request.method == 'POST':
-        usernameoremail = request.POST.get('usernameoremail')
-        password = request.POST.get('password')
-        if usernameoremail == 'root' and password == 'root':
-            request.session['user_id'] = 'root'
-            request.session['role'] = 'Admin'
-            return render(request, 'admin_dashboard.html')
-        else:
-            return render(request, 'admin_login.html', {'error': 'Invalid Crendentials of admin'})
-    return render(request, 'admin_login.html')
+    """
+    Handle admin authentication with hardcoded credentials.
+    
+    This function provides a simple admin login mechanism using
+    hardcoded credentials (username: 'root', password: 'root').
+    Upon successful login, it sets session variables and redirects
+    to the admin dashboard.
+    
+    Args:
+        request: HTTP request object containing login credentials
+        
+    Returns:
+        Rendered template with success/error messages
+    """
+    try:
+        if request.method == 'POST':
+            # Get login credentials from form
+            username_or_email = request.POST.get('usernameoremail')
+            password = request.POST.get('password')
+            
+            # Validate input fields
+            if not username_or_email or not password:
+                return render(request, 'admin_login.html', {'error': 'Please provide both username and password'})
+            
+            # Check against hardcoded admin credentials
+            if username_or_email == 'root' and password == 'root':
+                # Set session variables for admin user
+                request.session['user_id'] = 'root'
+                request.session['role'] = 'Admin'
+                return render(request, 'admin_dashboard.html')
+            else:
+                # Display error for invalid credentials
+                return render(request, 'admin_login.html', {'error': 'Invalid credentials for admin'})
+        
+        # If GET request, render the admin login form
+        return render(request, 'admin_login.html')
+    except Exception as e:
+        return render(request, 'admin_login.html', {'error': f'Login error: {str(e)}'})
 
 def engineer_login(request):
-    error = None
+    """
+    Handle engineer user authentication and login.
+    
+    This function authenticates engineers by checking their username/email
+    and password against the database. It validates the user role and
+    sets appropriate session variables upon successful login.
+    
+    Args:
+        request: HTTP request object containing login credentials
+        
+    Returns:
+        Rendered template with success/error messages
+    """
+    try:
+        if request.method == 'POST':
+            # Extract login credentials from form
+            username_or_email = request.POST.get('usernameoremail')
+            password = request.POST.get('password')
 
-    if request.method == 'POST':
-        username = request.POST.get('usernameoremail')
-        password = request.POST.get('password')
+            # Validate input fields
+            if not username_or_email or not password:
+                return render(request, 'engineer_login.html', {'error': 'Please provide both username/email and password'})
 
-        user = User.objects.filter(username=username).first() or User.objects.filter(email=username).first()
-        if user:
-            if user.password == password:
-                if user.role == 'Engineer':
-                    request.session['user_id'] = user.user_id
-                    request.session['role'] = user.role
-                    return render(request, 'engineer_dashboard.html')
+            # Try to find user by username or email
+            user = User.objects.filter(username=username_or_email).first() or User.objects.filter(email=username_or_email).first()
+            
+            if user:
+                # Check if password matches
+                if user.password == password:
+                    # Verify user has Engineer role
+                    if user.role == 'Engineer':
+                        # Set session variables for authenticated engineer
+                        request.session['user_id'] = user.user_id
+                        request.session['role'] = user.role
+                        return render(request, 'engineer_dashboard.html')
+                    else:
+                        # User exists but has wrong role
+                        return render(request, 'engineer_login.html', {'error': 'Access denied: This account is not for engineers'})
                 else:
-                    return render(request, 'engineer_login.html', {'error': 'Wrong user type login!'})
+                    # Password is incorrect
+                    return render(request, 'engineer_login.html', {'error': 'Incorrect password'})
             else:
-                return render(request, 'engineer_login.html', {'error': 'Password is incorrect!'})
-        else:
-            return render(request, 'engineer_login.html', {'error': 'Username/email is incorrect!'})
-    return render(request, 'engineer_login.html', {'error': error})
+                # User not found in database
+                return render(request, 'engineer_login.html', {'error': 'Username/email not found'})
+        
+        # If GET request, render the engineer login form
+        return render(request, 'engineer_login.html')
+    except Exception as e:
+        return render(request, 'engineer_login.html', {'error': f'Login error: {str(e)}'})
 
+def team_leader_login(request):
+    """
+    Handle Team Leader authentication and login.
+    
+    This function authenticates Team Leaders by checking their credentials
+    and role. Similar to engineer login but specifically for users with
+    'Team Leader' role.
+    
+    Args:
+        request: HTTP request object containing login credentials
+        
+    Returns:
+        Rendered template with success/error messages
+    """
+    try:
+        if request.method == 'POST':
+            # Extract login credentials from form
+            username_or_email = request.POST.get('usernameoremail')
+            password = request.POST.get('password')
 
+            # Validate input fields
+            if not username_or_email or not password:
+                return render(request, 'tl_login.html', {'error': 'Please provide both username/email and password'})
 
-def tl_login(request):
-    error = None
-    if request.method == 'POST':
-        username = request.POST.get('usernameoremail')
-        password = request.POST.get('password')
-
-        user = User.objects.filter(username=username).first() or User.objects.filter(email=username).first()
-        if user:
-            if user.password == password:
-                if user.role == 'Team Leader':
-                    request.session['user_id'] = user.user_id
-                    request.session['role'] = user.role
-                    return render(request, 'tl_dashboard.html')
+            # Try to find user by username or email
+            user = User.objects.filter(username=username_or_email).first() or User.objects.filter(email=username_or_email).first()
+            
+            if user:
+                # Check if password matches
+                if user.password == password:
+                    # Verify user has Team Leader role
+                    if user.role == 'Team Leader':
+                        # Set session variables for authenticated team leader
+                        request.session['user_id'] = user.user_id
+                        request.session['role'] = user.role
+                        return render(request, 'tl_dashboard.html')
+                    else:
+                        # User exists but has wrong role
+                        return render(request, 'tl_login.html', {'error': 'Access denied: This account is not for team leaders'})
                 else:
-                    return render(request, 'tl_login.html', {'error': 'Wrong user type login!'})
+                    # Password is incorrect
+                    return render(request, 'tl_login.html', {'error': 'Incorrect password'})
             else:
-                return render(request, 'tl_login.html', {'error': 'Password is incorrect!'})
-        else:
-            return render(request, 'tl_login.html', {'error': 'Username/email is incorrect!'})
-    return render(request, 'tl_login.html', {'error': error})
+                # User not found in database
+                return render(request, 'tl_login.html', {'error': 'Username/email not found'})
+        
+        # If GET request, render the team leader login form
+        return render(request, 'tl_login.html')
+    except Exception as e:
+        return render(request, 'tl_login.html', {'error': f'Login error: {str(e)}'})
 
-def dl_login(request):
-    error = None
-    if request.method == 'POST':
-        username = request.POST.get('usernameoremail')
-        password = request.POST.get('password')
+def department_leader_login(request):
+    """
+    Handle Department Leader authentication and login.
+    
+    This function authenticates Department Leaders and redirects them
+    to their dashboard upon successful login. Uses redirect instead of
+    render for successful login.
+    
+    Args:
+        request: HTTP request object containing login credentials
+        
+    Returns:
+        Rendered template with error messages or redirect to dashboard
+    """
+    try:
+        if request.method == 'POST':
+            # Extract login credentials from form
+            username_or_email = request.POST.get('usernameoremail')
+            password = request.POST.get('password')
 
-        user = User.objects.filter(username=username).first() or User.objects.filter(email=username).first()
-        if user:
-            if user.password == password:
-                if user.role == 'Department Leader':
-                    request.session['user_id'] = user.user_id
-                    request.session['role'] = user.role
-                    return redirect('dl-dashboard')
+            # Validate input fields
+            if not username_or_email or not password:
+                return render(request, 'dl_login.html', {'error': 'Please provide both username/email and password'})
+
+            # Try to find user by username or email
+            user = User.objects.filter(username=username_or_email).first() or User.objects.filter(email=username_or_email).first()
+            
+            if user:
+                # Check if password matches
+                if user.password == password:
+                    # Verify user has Department Leader role
+                    if user.role == 'Department Leader':
+                        # Set session variables and redirect to dashboard
+                        request.session['user_id'] = user.user_id
+                        request.session['role'] = user.role
+                        return redirect('dl-dashboard')
+                    else:
+                        # User exists but has wrong role
+                        return render(request, 'dl_login.html', {'error': 'Access denied: This account is not for department leaders'})
                 else:
-                    return render(request, 'dl_login.html', {'error': 'Wrong user type login!'})
+                    # Password is incorrect
+                    return render(request, 'dl_login.html', {'error': 'Incorrect password'})
             else:
-                return render(request, 'dl_login.html', {'error': 'Password is incorrect!'})
-        else:
-            return render(request, 'dl_login.html', {'error': 'Username/email is incorrect!'})
-    return render(request, 'dl_login.html', {'error': error})
+                # User not found in database
+                return render(request, 'dl_login.html', {'error': 'Username/email not found'})
+        
+        # If GET request, render the department leader login form
+        return render(request, 'dl_login.html')
+    except Exception as e:
+        return render(request, 'dl_login.html', {'error': f'Login error: {str(e)}'})
 
-def sm_login(request):
-    if request.method == 'POST':
-        username = request.POST.get('usernameoremail')
-        password = request.POST.get('password')
+def senior_manager_login(request):
+    """
+    Handle Senior Manager authentication and login.
+    
+    This function authenticates Senior Managers and redirects them
+    to their dashboard upon successful login. Similar to DL login
+    but for Senior Manager role.
+    
+    Args:
+        request: HTTP request object containing login credentials
+        
+    Returns:
+        Rendered template with error messages or redirect to dashboard
+    """
+    try:
+        if request.method == 'POST':
+            # Extract login credentials from form
+            username_or_email = request.POST.get('usernameoremail')
+            password = request.POST.get('password')
 
-        user = User.objects.filter(username=username).first() or User.objects.filter(email=username).first()
-        if user:
-            if user.password == password:
-                if user.role == 'Senior Manager':
-                    request.session['user_id'] = user.user_id
-                    request.session['role'] = user.role
-                    return redirect('sm-dashboard')
+            # Validate input fields
+            if not username_or_email or not password:
+                return render(request, 'sm_login.html', {'error': 'Please provide both username/email and password'})
+
+            # Try to find user by username or email
+            user = User.objects.filter(username=username_or_email).first() or User.objects.filter(email=username_or_email).first()
+            
+            if user:
+                # Check if password matches
+                if user.password == password:
+                    # Verify user has Senior Manager role
+                    if user.role == 'Senior Manager':
+                        # Set session variables and redirect to dashboard
+                        request.session['user_id'] = user.user_id
+                        request.session['role'] = user.role
+                        return redirect('sm-dashboard')
+                    else:
+                        # User exists but has wrong role
+                        return render(request, 'sm_login.html', {'error': 'Access denied: This account is not for senior managers'})
                 else:
-                    return render(request, 'sm_login.html', {'error': 'Wrong user type login!'})
+                    # Password is incorrect
+                    return render(request, 'sm_login.html', {'error': 'Incorrect password'})
             else:
-                return render(request, 'sm_login.html', {'error': 'Password is incorrect!'})
-        else:
-            return render(request, 'sm_login.html', {'error': 'Username/email is incorrect!'})
-    return render(request, 'sm_login.html')
+                # User not found in database
+                return render(request, 'sm_login.html', {'error': 'Username/email not found'})
+        
+        # If GET request, render the senior manager login form
+        return render(request, 'sm_login.html')
+    except Exception as e:
+        return render(request, 'sm_login.html', {'error': f'Login error: {str(e)}'})
 
 def logout_view(request):
-    if not check_session(request):
-        return render(request, 'admin_login.html', {'error': 'Logout Successfully'})
-    print(f"User ID: {request.session['user_id']}")
-    print(f"Role: {request.session['role']}")
-    request.session.flush()
-    print(f"User ID: {request.session.get('user_id', 'Not found')}")
-    print(f"Role: {request.session.get('role', 'Not found')}")
-    return render(request, 'admin_login.html', {'error': 'Logout Successfully'})
+    """
+    Handle user logout and session cleanup.
+    
+    This function clears all session data and logs the user out of the system.
+    It includes debug logging to track session state before and after logout.
+    
+    Args:
+        request: HTTP request object
+        
+    Returns:
+        Rendered template with logout confirmation message
+    """
+    try:
+        # Check if user is already logged out
+        if not check_session(request):
+            return render(request, 'admin_login.html', {'success': 'Successfully logged out'})
+        
+        # Debug logging - print session info before logout
+        print(f"User ID: {request.session.get('user_id', 'Not found')}")
+        print(f"Role: {request.session.get('role', 'Not found')}")
+        
+        # Clear all session data
+        request.session.flush()
+        
+        # Debug logging - verify session is cleared
+        print(f"User ID: {request.session.get('user_id', 'Not found')}")
+        print(f"Role: {request.session.get('role', 'Not found')}")
+        
+        # Return logout confirmation message
+        return render(request, 'admin_login.html', {'success': 'Successfully logged out'})
+    except Exception as e:
+        return render(request, 'admin_login.html', {'error': f'Logout error: {str(e)}'})
 
 def check_session(request):
-    print("Checking session...")
-    print(f"Session data: {request.session}")
-    if 'user_id' in request.session and 'role' in request.session:
-        return True
-    return False
-
-
+    """
+    Check if user session is valid and active.
+    
+    This utility function verifies that the current request has valid
+    session data with both user_id and role present. Used for session
+    validation across the application.
+    
+    Args:
+        request: HTTP request object
+        
+    Returns:
+        bool: True if session is valid, False otherwise
+    """
+    try:
+        # Debug logging to track session checking
+        print("Checking session...")
+        print(f"Session data: {request.session}")
+        
+        # Check if both user_id and role exist in session
+        if 'user_id' in request.session and 'role' in request.session:
+            return True
+        return False
+    except Exception as e:
+        print(f"Session check error: {str(e)}")
+        return False
 
 def reset_account(request):
-    if request.method == 'POST':
-        email = request.POST.get('email')
-        user = User.objects.filter(email=email).first()
-        if user:
-            return render(request, 'reset_password.html', {'email': email, 'success': 'Email Verified!!!'})
-        else:
-            return render(request, 'reset_account.html', {'error': 'Email does not exist!'})
-    return render(request, 'reset_account.html')
+    """
+    Handle account reset request by email verification.
+    
+    Args:
+        request: HTTP request object
+        
+    Returns:
+        Rendered template with verification result
+    """
+    try:
+        if request.method == 'POST':
+            email = request.POST.get('email')
+            
+            # Validate email input
+            if not email:
+                return render(request, 'reset_account.html', {'error': 'Please provide an email address'})
+            
+            user = User.objects.filter(email=email).first()
+            if user:
+                return render(request, 'reset_password.html', {'email': email, 'success': 'Email verified successfully!'})
+            else:
+                return render(request, 'reset_account.html', {'error': 'Email address not found in our records'})
+        return render(request, 'reset_account.html')
+    except Exception as e:
+        return render(request, 'reset_account.html', {'error': f'Reset error: {str(e)}'})
 
 def reset_password(request):
+    """
+    Render password reset form.
+    
+    Args:
+        request: HTTP request object
+        
+    Returns:
+        Rendered password reset template
+    """
     return render(request, 'reset_password.html')
 
 def reset_user_password_plaintext(request):
-    if request.method == 'POST':
-        email = request.POST.get('email')
-        password = request.POST.get('password')
-        confirm_password = request.POST.get('confirmpassword')
+    """
+    Handle password reset with plain text storage.
+    
+    Args:
+        request: HTTP request object
+        
+    Returns:
+        Rendered template with reset result
+    """
+    try:
+        if request.method == 'POST':
+            email = request.POST.get('email')
+            new_password = request.POST.get('password')
+            confirm_password = request.POST.get('confirmpassword')
 
-        user = User.objects.filter(email=email).first()
+            # Validate input fields
+            if not email or not new_password or not confirm_password:
+                return render(request, 'reset_password.html', {
+                    'error': 'Please fill in all required fields',
+                    'email': email
+                })
 
-        if not user:
-            return render(request, 'reset_password.html', {
-                'error': 'Email does not exist!',
-                'email': email
+            user = User.objects.filter(email=email).first()
+
+            if not user:
+                return render(request, 'reset_password.html', {
+                    'error': 'Email address not found',
+                    'email': email
+                })
+
+            if new_password != confirm_password:
+                return render(request, 'reset_password.html', {
+                    'error': 'Passwords do not match',
+                    'email': email
+                })
+
+            # Validate password strength
+            if len(new_password) < 6:
+                return render(request, 'reset_password.html', {
+                    'error': 'Password must be at least 6 characters long',
+                    'email': email
+                })
+
+            # Store as plain text (not recommended for production)
+            user.password = new_password
+            user.save(update_fields=['password'])
+
+            return render(request, 'admin_login.html', {
+                'success': 'Password changed successfully!'
             })
 
-        if password != confirm_password:
-            return render(request, 'reset_password.html', {
-                'error': 'Passwords do not match!',
-                'email': email
-            })
-
-        # Store as plain text (not recommended for production)
-        user.password = password
-        user.save(update_fields=['password'])
-
-        return render(request, 'admin_login.html', {
-            'success': 'Password changed successfully!'
-        })
-
-    return render(request, 'reset_password.html')
+        return render(request, 'reset_password.html')
+    except Exception as e:
+        return render(request, 'reset_password.html', {'error': f'Password reset error: {str(e)}'})
 
 def admin_dashboard(request):
     print(f"User ID: {request.session['user_id']}")
@@ -453,10 +842,8 @@ def sm_departments_list(request):
 
 ########################## Engineer Panel #######################
 
-
 def engineers_dashboard(request):
     return render(request, 'engineer_dashboard.html')
-
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
@@ -788,7 +1175,7 @@ def team_summary(request):
                 fig2, ax2 = plt.subplots(figsize=(10, 6))
                 x = range(len(card_titles))
                 ax2.bar(x, green_data, label='Green', color='green')
-                ax2.bar(x, Amber_data, bottom=green_data, color='#FFBF00', label='Amber')  # Amber
+                ax2.bar(x, Amber_data, bottom=green_data, color='#FFBF00', label='Amber')
                 ax2.bar(x, red_data, bottom=[g + y for g, y in zip(green_data, Amber_data)], label='Red', color='red')
                 ax2.set_xticks(x)
                 ax2.set_xticklabels(card_titles, rotation=45, ha='right')
@@ -1520,7 +1907,8 @@ from django.shortcuts import render, get_object_or_404, redirect
 from .models import User, Session, HealthCard, Vote
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-import io, base64
+import io
+import base64
 @csrf_protect
 def department_leader_summary(request):
     user_id = request.session.get('user_id')

@@ -2,58 +2,148 @@
 {% load static %}
 
 {% block content %}
-<div class="container">
-    <!-- Logo -->
-    <div class="text-center my-4 py-3">
-        <img src="{% static 'images/sm_logo.png' %}" alt="Logo" width="20%" height="20%">
-    </div>
-
-    <!-- Registration Form -->
-    <div class="row justify-content-center">
-        <div class="col-md-10">
-            <div class="p-4 shadow rounded-4 bg-white">
-                <form action="" method="post" class="row">
-                    {% csrf_token %}
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="usernameoremail" class="form-label">Username or email addres</label>
-                            <input type="text" name="usernameoremail" id="usernameoremail" class="form-control" placeholder="Enter username or email address" required>
-                        </div>
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <label for="password" class="form-label">Password</label>
-                                <a href="/reset_account">Forgot Password?</a>
+<div class="login-container">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10 col-xl-8">
+                <div class="card login-card shadow-lg border-0 rounded-4 overflow-hidden">
+                    <div class="row g-0">
+                        <!-- Left Side - Form -->
+                        <div class="col-lg-7 p-4 p-lg-5">
+                            <!-- Logo and Header -->
+                            <div class="text-center mb-4">
+                                <img src="{% static 'images/sm_logo.png' %}" alt="Senior Manager Logo" class="mb-3" style="width: 80px; height: 80px; object-fit: contain;">
+                                <h2 class="fw-bold text-dark mb-2">Senior Manager Portal</h2>
+                                <p class="text-muted mb-0">Welcome back! Please sign in to your account.</p>
                             </div>
-                            <input type="password" name="password" id="password" class="form-control" placeholder="Enter password" required>
-                        </div>
-                        <div class="text-start">
-                            <button type="submit" class="btn btn-primary px-4">Login</button>
-                            {% if error %}
-                            <script>alert("{{ error }}");</script>
-                            {% endif %}
-                        </div>
-                        <div class="text-start">
-                            <p>Don't have an account? <a href="/">Register</a></p>
-                        </div>
-                    </div>
 
-                    <div class="col-md-6">
-                        <ul class="list-unstyled">
-                            <li><a href="/admins">Admin login page</a></li>
-                            <li><a href="/engineer">Engineer login page</a></li>
-                            <li><a href="/tl">Team Leader login page</a></li>
-                            <li><a href="/dl">Department Leader login page</a></li>
-                            <li><a href="/sm">Senior manager login page</a></li>
-                        </ul>
+                            <!-- Login Form -->
+                            <form action="" method="post" class="needs-validation" novalidate>
+                                {% csrf_token %}
+                                
+                                <!-- Username/Email Field -->
+                                <div class="mb-4">
+                                    <label for="usernameoremail" class="form-label fw-semibold text-dark">
+                                        <i class="bi bi-person-fill me-2 text-primary"></i>Username or Email
+                                    </label>
+                                    <div class="input-group input-group-lg">
+                                        <span class="input-group-text">
+                                            <i class="bi bi-person text-muted"></i>
+                                        </span>
+                                        <input type="text" 
+                                               name="usernameoremail" 
+                                               id="usernameoremail" 
+                                               class="form-control" 
+                                               placeholder="Enter your username or email"
+                                               required>
+                                    </div>
+                                </div>
+
+                                <!-- Password Field -->
+                                <div class="mb-4">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <label for="password" class="form-label fw-semibold text-dark mb-0">
+                                            <i class="bi bi-lock-fill me-2 text-primary"></i>Password
+                                        </label>
+                                        <a href="/reset_account" class="text-decoration-none text-primary fw-medium small">
+                                            Forgot Password?
+                                        </a>
+                                    </div>
+                                    <div class="input-group input-group-lg">
+                                        <span class="input-group-text">
+                                            <i class="bi bi-lock text-muted"></i>
+                                        </span>
+                                        <input type="password" 
+                                               name="password" 
+                                               id="password" 
+                                               class="form-control" 
+                                               placeholder="Enter your password"
+                                               required>
+                                        <button class="btn btn-outline-secondary" 
+                                                type="button" 
+                                                id="togglePassword">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Login Button -->
+                                <div class="d-grid mb-4">
+                                    <button type="submit" class="btn btn-primary btn-lg fw-semibold py-3">
+                                        <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+                                    </button>
+                                </div>
+
+                                <!-- Error Alert -->
+                                {% if error %}
+                                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                    {{ error }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                                {% endif %}
+
+                                <!-- Register Link -->
+                                <div class="text-center">
+                                    <p class="text-muted mb-0">
+                                        Don't have an account? 
+                                        <a href="/" class="text-decoration-none fw-semibold text-primary">Register here</a>
+                                    </p>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Right Side - Quick Links -->
+                        {% with current_page="sm" %}
+                            {% include 'includes/quick_access.html' %}
+                        {% endwith %}
                     </div>
-                </form>
+                </div>
             </div>
         </div>
     </div>
-
-    <!-- Optional Greeting -->
-    {% if name %}
-    <h1 class="text-center mt-4">Hello {{ name }}!!!</h1>
-    {% endif %}
 </div>
+
+<!-- Custom JavaScript for password toggle -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Password toggle functionality
+    const togglePassword = document.getElementById('togglePassword');
+    const password = document.getElementById('password');
+    
+    if (togglePassword && password) {
+        togglePassword.addEventListener('click', function() {
+            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+            password.setAttribute('type', type);
+            
+            const icon = this.querySelector('i');
+            icon.classList.toggle('bi-eye');
+            icon.classList.toggle('bi-eye-slash');
+        });
+    }
+    
+    // Form validation
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    });
+});
+</script>
+
+<!-- Optional Greeting -->
+{% if name %}
+<div class="position-fixed top-0 start-50 translate-middle-x p-3" style="z-index: 1050;">
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        Hello {{ name }}! Welcome back.
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+</div>
+{% endif %}
 {% endblock %}

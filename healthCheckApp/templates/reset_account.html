@@ -2,35 +2,103 @@
 {% load static %}
 
 {% block content %}
-<div class="container">
-    <!-- Logo -->
-    <div class="text-center my-4 py-3">
-        <a href="/"><img src="{% static 'images/logo.png' %}" alt="Logo" width="20%" height="20%"></a>
-    </div>
+<div class="login-container">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10 col-xl-8">
+                <div class="card login-card shadow-lg border-0 rounded-4 overflow-hidden">
+                    <div class="row g-0">
+                        <!-- Left Side - Form -->
+                        <div class="col-lg-7 p-4 p-lg-5">
+                            <!-- Logo and Header -->
+                            <div class="text-center mb-4">
+                                <a href="/">
+                                    <img src="{% static 'images/logo.png' %}" alt="Logo" class="mb-3" style="width: 80px; height: 80px; object-fit: contain;">
+                                </a>
+                                <h2 class="fw-bold text-dark mb-2">Reset Password</h2>
+                                <p class="text-muted mb-0">Enter your email to receive reset instructions.</p>
+                            </div>
 
-    <!-- Registration Form -->
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <h3>Reset Password</h3>
-            <div class="p-4 shadow rounded-4 bg-white">
-                <form action="" method="post" class="row">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label for="email" class="form-label">Email address</label>
-                        <input type="email" name="email" id="email" class="form-control" placeholder="Enter email address" required>
+                            <!-- Reset Form -->
+                            <form action="" method="post" class="needs-validation" novalidate>
+                                {% csrf_token %}
+                                
+                                <!-- Email Field -->
+                                <div class="mb-4">
+                                    <label for="email" class="form-label fw-semibold text-dark">
+                                        <i class="bi bi-envelope-fill me-2 text-primary"></i>Email Address
+                                    </label>
+                                    <div class="input-group input-group-lg">
+                                        <span class="input-group-text">
+                                            <i class="bi bi-envelope text-muted"></i>
+                                        </span>
+                                        <input type="email" 
+                                               name="email" 
+                                               id="email" 
+                                               class="form-control" 
+                                               placeholder="Enter your email address"
+                                               required>
+                                    </div>
+                                </div>
+
+                                <!-- Verify Button -->
+                                <div class="d-grid mb-4">
+                                    <button type="submit" class="btn btn-primary btn-lg fw-semibold py-3" value="verify">
+                                        <i class="bi bi-envelope-check-fill me-2"></i>Send Reset Link
+                                    </button>
+                                </div>
+
+                                <!-- Error Alert -->
+                                {% if error %}
+                                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                    {{ error }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                                {% endif %}
+
+                                <!-- Success Alert -->
+                                {% if success %}
+                                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                    <i class="bi bi-check-circle-fill me-2"></i>
+                                    {{ success }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                                {% endif %}
+
+                                <!-- Login Link -->
+                                <div class="text-center">
+                                    <p class="text-muted mb-0">
+                                        Remember your password? 
+                                        <a href="/admins" class="text-decoration-none fw-semibold text-primary">Sign in here</a>
+                                    </p>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Right Side - Help Section -->
+                        {% include 'includes/reset_help.html' %}
                     </div>
-                    <div class="text-center">
-                        <button type="submit" class="btn btn-primary px-4" value="verify">Verify</button>
-                        {% if error %}
-                        <script>alert("{{ error }}");</script>
-                        {% endif %}
-                    </div>
-                    <div class="text-start">
-                        <p>Remember the password? <a href="/admins">Log In</a></p>
-                    </div>
-                </form>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Custom JavaScript for form validation -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form validation
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    });
+});
+</script>
 {% endblock %}
