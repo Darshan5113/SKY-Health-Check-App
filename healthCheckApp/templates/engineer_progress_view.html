@@ -1,139 +1,1197 @@
 {% extends 'engineer_base.html' %}
+{% load static %}
 
-<!-- Quick Actions -->
+{% block title %}Progress View - Health Check App{% endblock %}
 
 {% block content %}
-{% include 'includes/engineer_quick_actions.html' with exclude_action='progress' %}
-<div class="container mt-5">
-    <h2 class="mb-4">View Your Progress</h2>
-
-    <!-- View Toggle Buttons -->
-    <div class="mb-4">
-        <a href="?view=team" class="btn btn-outline-primary {% if view_mode == 'team' %}active{% endif %}">Team Progress</a>
-        <a href="?view=history" class="btn btn-outline-secondary {% if view_mode == 'history' %}active{% endif %}">Your Vote History</a>
-    </div>
-
-    {% if view_mode == 'team' %}
-        <form method="get" class="mb-4">
-            <input type="hidden" name="view" value="team">
-            <div class="row">
-                <div class="col-md-5">
-                    <label for="session">Select Session:</label>
-                    <select name="session_id" class="form-control" required>
-                        {% for session in sessions %}
-                            <option value="{{ session.session_id }}" {% if session.session_id == selected_session_id %}selected{% endif %}>
-                                {{ session.date }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-5">
-                    <label for="card">Select Health Card:</label>
-                    <select name="card_id" class="form-control" required>
-                        {% for card in cards %}
-                            <option value="{{ card.card_id }}" {% if card.card_id == selected_card_id %}selected{% endif %}>
-                                {{ card }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-2 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary w-100">View</button>
-                </div>
-            </div>
-        </form>
-
-        {% if show_results %}
-            {% if summary %}
-                <div class="card shadow p-3 mb-4">
-                    <h5><strong>Team:</strong> {{ team.name }}</h5>
-                    <p><strong>Card:</strong> {{ selected_card }}</p>
-                    <p><strong>Session:</strong> {{ selected_session.date }}</p>
-
-                    <p>
-                        <strong>Team Vote:</strong>
-                        <span class="badge 
-                            {% if summary.overall_vote == 'Green' %}bg-success
-                            {% elif summary.overall_vote == 'Yellow' %}bg-warning text-dark
-                            {% else %}bg-danger{% endif %}">
-                            {{ summary.overall_vote }}
-                        </span>
-                    </p>
-
-                    <p>
-                        <strong>Progress Trend:</strong>
-                        {% if summary.progress_trend %}
-                            <span class="text-success">⬆ Up</span>
-                        {% else %}
-                            <span class="text-danger">⬇ Down</span>
-                        {% endif %}
-                    </p>
-
-                    <!-- {% if engineer_vote %}
-                        <p><strong>Your Vote:</strong>
-                            {% if engineer_vote.vote_value == 3 %}
-                                <span class="badge bg-danger">Red</span>
-                            {% elif engineer_vote.vote_value == 2 %}
-                                <span class="badge bg-warning text-dark">Yellow</span>
-                            {% elif engineer_vote.vote_value == 1 %}
-                                <span class="badge bg-success">Green</span>
-                            {% else %}
-                                Unknown
-                            {% endif %}
-                        </p>
-                    {% else %} -->
-
-                        <p class="text-muted">You did not vote for this card in this session.</p>
-                    {% endif %}
-                </div>
-            {% else %}
-                <div class="alert alert-warning">
-                    Team Leader has not generated progress for the selected session and card yet.
-                </div>
-            {% endif %}
-        {% endif %}
-
-        {% elif view_mode == 'history' %}
-        <div class="card p-3 shadow">
-            <h5 class="mb-3">Your Voting History</h5>
-            {% if vote_history %}
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Team</th>
-                            <th>Session Date</th>
-                            <th>Card</th>
-                            <th>Your Vote</th>
-                            <th>Voted At</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for vote in vote_history %}
-                            <tr>
-                                <td>{{ vote.user.team.name }}</td>
-                                <td>{{ vote.session.date }}</td>
-                                <td>{{ vote.card }}</td>
-                                <td>
-                                    {% if vote.vote_value == 3 %}
-                                        <span class="badge bg-danger">Red</span>
-                                    {% elif vote.vote_value == 2 %}
-                                        <span class="badge bg-warning text-dark">Yellow</span>
-                                    {% elif vote.vote_value == 1 %}
-                                        <span class="badge bg-success">Green</span>
-                                    {% else %}
-                                        Unknown
-                                    {% endif %}
-                                </td>
-                                <td>{{ vote.created_at|date:"Y-m-d H:i" }}</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            {% else %}
-                <p class="text-muted">No voting history found.</p>
-            {% endif %}
+<!-- Enhanced Page Header -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="progress-header-card">
+      <div class="header-content">
+        <div class="header-icon">
+          <i class="fas fa-chart-line"></i>
         </div>
-    {% endif %}
-    
+        <div class="header-text">
+          <h1 class="header-title">Progress Dashboard</h1>
+          <p class="header-subtitle">Track your team's progress and voting history</p>
+        </div>
+      </div>
+      <div class="header-decoration">
+        <div class="decoration-circle circle-1"></div>
+        <div class="decoration-circle circle-2"></div>
+        <div class="decoration-circle circle-3"></div>
+      </div>
+    </div>
+  </div>
 </div>
+
+<!-- Quick Actions -->
+{% include 'includes/engineer_quick_actions.html' with exclude_action='progress' %}
+
+<!-- Enhanced View Toggle Buttons -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="view-toggle-card">
+      <div class="toggle-buttons">
+        <a href="?view=team" class="toggle-btn {% if view_mode == 'team' %}active{% endif %}">
+          <i class="fas fa-users me-2"></i>Team Progress
+        </a>
+        <a href="?view=history" class="toggle-btn {% if view_mode == 'history' %}active{% endif %}">
+          <i class="fas fa-history me-2"></i>Your Vote History
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Team Progress Section -->
+{% if view_mode == 'team' %}
+<div class="row">
+  <div class="col-12">
+    <div class="progress-form-card">
+      <div class="card-header">
+        <h5 class="mb-0">
+          <i class="fas fa-filter me-2"></i>Filter Progress Data
+        </h5>
+      </div>
+      <div class="card-body">
+        <form method="get" class="progress-filter-form">
+          <input type="hidden" name="view" value="team">
+          <div class="row g-3">
+            <div class="col-lg-5 col-md-6">
+              <div class="form-group">
+                <label for="session" class="form-label">
+                  <i class="fas fa-calendar me-2"></i>Select Session
+                </label>
+                <select name="session_id" class="form-select" required>
+                  <option value="">Choose a session...</option>
+                  {% for session in sessions %}
+                    <option value="{{ session.session_id }}" {% if session.session_id == selected_session_id %}selected{% endif %}>
+                      {{ session.date }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="col-lg-5 col-md-6">
+              <div class="form-group">
+                <label for="card" class="form-label">
+                  <i class="fas fa-clipboard-list me-2"></i>Select Health Card
+                </label>
+                <select name="card_id" class="form-select" required>
+                  <option value="">Choose a health card...</option>
+                  {% for card in cards %}
+                    <option value="{{ card.card_id }}" {% if card.card_id == selected_card_id %}selected{% endif %}>
+                      {{ card }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="col-lg-2 col-md-12">
+              <div class="form-group d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                  <i class="fas fa-search me-2"></i>View Progress
+                </button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Progress Results -->
+{% if show_results %}
+<div class="row mt-4">
+  <div class="col-12">
+    {% if summary %}
+      <div class="progress-result-card">
+        <div class="result-header">
+          <div class="result-icon">
+            <i class="fas fa-chart-bar"></i>
+          </div>
+          <div class="result-info">
+            <h4 class="result-title">Team Progress Summary</h4>
+            <p class="result-subtitle">{{ team.name }} • {{ selected_card }} • {{ selected_session.date }}</p>
+          </div>
+        </div>
+        
+        <div class="result-content">
+          <div class="row g-4">
+            <div class="col-md-6">
+              <div class="metric-card">
+                <div class="metric-icon">
+                  <i class="fas fa-vote-yea"></i>
+                </div>
+                <div class="metric-content">
+                  <h6 class="metric-label">Team Vote</h6>
+                  <div class="metric-value">
+                    <span class="vote-badge 
+                      {% if summary.overall_vote == 'Green' %}vote-green
+                      {% elif summary.overall_vote == 'Yellow' %}vote-yellow
+                      {% else %}vote-red{% endif %}">
+                      {{ summary.overall_vote }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="metric-card">
+                <div class="metric-icon">
+                  <i class="fas fa-trending-up"></i>
+                </div>
+                <div class="metric-content">
+                  <h6 class="metric-label">Progress Trend</h6>
+                  <div class="metric-value">
+                    {% if summary.progress_trend %}
+                      <span class="trend-badge trend-up">
+                        <i class="fas fa-arrow-up me-1"></i>Up Trend
+                      </span>
+                    {% else %}
+                      <span class="trend-badge trend-down">
+                        <i class="fas fa-arrow-down me-1"></i>Down Trend
+                      </span>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="user-vote-section mt-4">
+            <h6 class="section-title">
+              <i class="fas fa-user-check me-2"></i>Your Participation
+            </h6>
+            {% if engineer_vote %}
+              <div class="user-vote-info">
+                <p class="text-success mb-2">
+                  <i class="fas fa-check-circle me-2"></i>
+                  <strong>You voted for this card in this session</strong>
+                </p>
+                <div class="user-vote-display">
+                  <span class="vote-label">Your Vote:</span>
+                  <span class="vote-badge 
+                    {% if engineer_vote.vote_value == 1 %}vote-green
+                    {% elif engineer_vote.vote_value == 2 %}vote-yellow
+                    {% else %}vote-red{% endif %}">
+                    {% if engineer_vote.vote_value == 1 %}Green
+                    {% elif engineer_vote.vote_value == 2 %}Yellow
+                    {% else %}Red{% endif %}
+                  </span>
+                </div>
+                {% if engineer_vote.progress_note %}
+                  <div class="progress-note mt-2">
+                    <span class="note-label">Progress Note:</span>
+                    <span class="note-text">{{ engineer_vote.progress_note }}</span>
+                  </div>
+                {% endif %}
+              </div>
+            {% else %}
+              <p class="text-muted">
+                <i class="fas fa-info-circle me-1"></i>
+                You did not vote for this card in this session.
+              </p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% else %}
+      <div class="no-data-card">
+        <div class="no-data-icon">
+          <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <h5 class="no-data-title">No Progress Data Available</h5>
+        <p class="no-data-message">
+          Team Leader has not generated progress for the selected session and card yet.
+        </p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Vote History Section -->
+{% elif view_mode == 'history' %}
+<div class="row">
+  <div class="col-12">
+    <div class="history-card">
+      <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">
+            <i class="fas fa-history me-2"></i>Your Voting History
+          </h5>
+          <div class="history-actions">
+            <button class="btn btn-outline-primary btn-sm" onclick="exportHistory()">
+              <i class="fas fa-download me-1"></i>Export
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <!-- Search and Filter Controls -->
+        <div class="history-controls mb-4">
+          <div class="row g-3">
+            <div class="col-lg-4 col-md-6">
+              <div class="form-group">
+                <label for="searchInput" class="form-label">
+                  <i class="fas fa-search me-2"></i>Search Team
+                </label>
+                <input type="text" id="searchInput" class="form-control" placeholder="Search by team name...">
+              </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+              <div class="form-group">
+                <label for="voteFilter" class="form-label">
+                  <i class="fas fa-filter me-2"></i>Vote Filter
+                </label>
+                <select id="voteFilter" class="form-select">
+                  <option value="">All Votes</option>
+                  <option value="1">Green Votes</option>
+                  <option value="2">Yellow Votes</option>
+                  <option value="3">Red Votes</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+              <div class="form-group">
+                <label for="sortBy" class="form-label">
+                  <i class="fas fa-sort me-2"></i>Sort By
+                </label>
+                <select id="sortBy" class="form-select">
+                  <option value="date-desc">Date (Newest)</option>
+                  <option value="date-asc">Date (Oldest)</option>
+                  <option value="team">Team</option>
+                  <option value="card">Health Card</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-lg-2 col-md-6">
+              <div class="form-group d-flex align-items-end">
+                <button type="button" class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+                  <i class="fas fa-times me-1"></i>Clear
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- History Table -->
+        {% if vote_history %}
+          <div class="table-responsive">
+            <table class="table table-hover history-table" id="historyTable">
+              <thead class="table-light">
+                <tr>
+                  <th class="sortable" data-sort="team">
+                    <i class="fas fa-users me-1"></i>Team
+                    <i class="fas fa-sort sort-icon"></i>
+                  </th>
+                  <th class="sortable" data-sort="date">
+                    <i class="fas fa-calendar me-1"></i>Session Date
+                    <i class="fas fa-sort sort-icon"></i>
+                  </th>
+                  <th class="sortable" data-sort="card">
+                    <i class="fas fa-clipboard-list me-1"></i>Health Card
+                    <i class="fas fa-sort sort-icon"></i>
+                  </th>
+                  <th class="sortable" data-sort="vote">
+                    <i class="fas fa-vote-yea me-1"></i>Your Vote
+                    <i class="fas fa-sort sort-icon"></i>
+                  </th>
+                  <th class="sortable" data-sort="created">
+                    <i class="fas fa-clock me-1"></i>Voted At
+                    <i class="fas fa-sort sort-icon"></i>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for vote in vote_history %}
+                  <tr class="vote-row" 
+                      data-team="{{ vote.team.name|lower }}"
+                      data-card="{{ vote.card|lower }}"
+                      data-session="{{ vote.session.date|lower }}"
+                      data-vote="{{ vote.vote_value }}"
+                      data-date="{{ vote.created_at|date:'Y-m-d H:i' }}">
+                    <td>
+                      <div class="team-info">
+                        <span class="team-name">{{ vote.team.name }}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="session-date">{{ vote.session.date }}</span>
+                    </td>
+                    <td>
+                      <span class="card-name">{{ vote.card }}</span>
+                    </td>
+                    <td>
+                      {% if vote.vote_value == 3 %}
+                        <span class="vote-badge vote-red">Red</span>
+                      {% elif vote.vote_value == 2 %}
+                        <span class="vote-badge vote-yellow">Yellow</span>
+                      {% elif vote.vote_value == 1 %}
+                        <span class="vote-badge vote-green">Green</span>
+                      {% else %}
+                        <span class="vote-badge vote-unknown">Unknown</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <span class="vote-time">{{ vote.created_at|date:"Y-m-d H:i" }}</span>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          
+          <!-- Results Summary -->
+          <div class="results-summary mt-3">
+            <div class="row">
+              <div class="col-md-6">
+                <p class="text-muted mb-0">
+                  Showing <span id="visibleCount">{{ vote_history|length }}</span> of <span id="totalCount">{{ vote_history|length }}</span> votes
+                </p>
+              </div>
+              <div class="col-md-6 text-end">
+                <div class="vote-stats">
+                  <span class="stat-item">
+                    <span class="stat-badge vote-green">Green: <span id="greenCount">0</span></span>
+                  </span>
+                  <span class="stat-item">
+                    <span class="stat-badge vote-yellow">Yellow: <span id="yellowCount">0</span></span>
+                  </span>
+                  <span class="stat-item">
+                    <span class="stat-badge vote-red">Red: <span id="redCount">0</span></span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% else %}
+          <div class="no-data-card">
+            <div class="no-data-icon">
+              <i class="fas fa-inbox"></i>
+            </div>
+            <h5 class="no-data-title">No Voting History</h5>
+            <p class="no-data-message">You haven't submitted any votes yet.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<style>
+/* Enhanced Page Header */
+.progress-header-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 20px;
+  padding: 3rem 2rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(102, 126, 234, 0.3);
+  animation: slideInDown 0.8s ease-out;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  position: relative;
+  z-index: 2;
+}
+
+.header-icon {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 2rem;
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.header-icon i {
+  font-size: 2rem;
+  color: white;
+}
+
+.header-text {
+  color: white;
+}
+
+.header-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.header-subtitle {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  margin: 0;
+}
+
+.header-decoration {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.decoration-circle {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  animation: float 6s ease-in-out infinite;
+}
+
+.circle-1 {
+  width: 100px;
+  height: 100px;
+  top: 20%;
+  right: 10%;
+  animation-delay: 0s;
+}
+
+.circle-2 {
+  width: 60px;
+  height: 60px;
+  bottom: 20%;
+  left: 10%;
+  animation-delay: 2s;
+}
+
+.circle-3 {
+  width: 80px;
+  height: 80px;
+  top: 60%;
+  right: 20%;
+  animation-delay: 4s;
+}
+
+/* View Toggle Buttons */
+.view-toggle-card {
+  background: white;
+  border-radius: 15px;
+  padding: 1.5rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  animation: slideInUp 0.8s ease-out;
+}
+
+.toggle-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.toggle-btn {
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  text-decoration: none;
+  color: #6c757d;
+  background: #f8f9fa;
+  border: 2px solid #e9ecef;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 150px;
+}
+
+.toggle-btn:hover {
+  color: #495057;
+  background: #e9ecef;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.toggle-btn.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-color: #667eea;
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+/* Progress Form Card */
+.progress-form-card {
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  animation: slideInUp 0.8s ease-out;
+}
+
+.progress-form-card .card-header {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.progress-form-card .card-body {
+  padding: 2rem;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-label {
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 0.5rem;
+}
+
+.form-select, .form-control {
+  border-radius: 10px;
+  border: 2px solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+.form-select:focus, .form-control:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+/* Progress Result Card */
+.progress-result-card {
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  animation: slideInUp 0.8s ease-out;
+}
+
+.result-header {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 2rem;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.result-icon {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1.5rem;
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+}
+
+.result-icon i {
+  font-size: 1.5rem;
+  color: white;
+}
+
+.result-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0 0 0.5rem 0;
+}
+
+.result-subtitle {
+  color: #6c757d;
+  margin: 0;
+}
+
+.result-content {
+  padding: 2rem;
+}
+
+.metric-card {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+.metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.metric-icon {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1rem;
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+}
+
+.metric-icon i {
+  font-size: 1.2rem;
+  color: white;
+}
+
+.metric-label {
+  font-weight: 600;
+  color: #495057;
+  margin: 0 0 0.5rem 0;
+}
+
+.metric-value {
+  margin: 0;
+}
+
+.vote-badge {
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.vote-green {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+}
+
+.vote-yellow {
+  background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+  color: white;
+}
+
+.vote-red {
+  background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);
+  color: white;
+}
+
+.trend-badge {
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.trend-up {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+}
+
+.trend-down {
+  background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);
+  color: white;
+}
+
+.section-title {
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e9ecef;
+}
+
+/* User Vote Display Styling */
+.user-vote-info {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid #e9ecef;
+  border-left: 4px solid #28a745;
+}
+
+.user-vote-display {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.vote-label {
+  font-weight: 600;
+  color: #495057;
+  font-size: 0.95rem;
+}
+
+.progress-note {
+  background: white;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  border: 1px solid #dee2e6;
+}
+
+.note-label {
+  font-weight: 600;
+  color: #495057;
+  font-size: 0.9rem;
+  margin-right: 0.5rem;
+}
+
+.note-text {
+  color: #6c757d;
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+/* No Data Card */
+.no-data-card {
+  background: white;
+  border-radius: 15px;
+  padding: 3rem 2rem;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  animation: slideInUp 0.8s ease-out;
+}
+
+.no-data-icon {
+  font-size: 3rem;
+  color: #6c757d;
+  margin-bottom: 1rem;
+}
+
+.no-data-title {
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 0.5rem;
+}
+
+.no-data-message {
+  color: #6c757d;
+  margin: 0;
+}
+
+/* History Card */
+.history-card {
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  animation: slideInUp 0.8s ease-out;
+}
+
+.history-card .card-header {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.history-controls {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid #e9ecef;
+}
+
+.history-table {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.history-table thead th {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border: none;
+  padding: 1rem;
+  font-weight: 600;
+  color: #495057;
+  position: relative;
+}
+
+.sortable {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.sortable:hover {
+  background: rgba(102, 126, 234, 0.1);
+}
+
+.sort-icon {
+  margin-left: 0.5rem;
+  opacity: 0.5;
+  transition: all 0.3s ease;
+}
+
+.sortable:hover .sort-icon {
+  opacity: 1;
+  color: #667eea;
+}
+
+.history-table tbody tr {
+  transition: all 0.3s ease;
+}
+
+.history-table tbody tr:hover {
+  background: rgba(102, 126, 234, 0.05);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.history-table tbody td {
+  padding: 1rem;
+  border: none;
+  border-bottom: 1px solid #e9ecef;
+  vertical-align: middle;
+}
+
+.team-name, .session-date, .card-name, .vote-time {
+  font-weight: 500;
+  color: #495057;
+}
+
+.results-summary {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  border: 1px solid #e9ecef;
+}
+
+.vote-stats {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+.stat-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 15px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* Animations */
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .progress-header-card {
+    padding: 2rem 1rem;
+  }
+  
+  .header-content {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .header-icon {
+    margin-right: 0;
+    margin-bottom: 1rem;
+  }
+  
+  .header-title {
+    font-size: 2rem;
+  }
+  
+  .toggle-buttons {
+    flex-direction: column;
+  }
+  
+  .toggle-btn {
+    min-width: auto;
+  }
+  
+  .result-header {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .result-icon {
+    margin-right: 0;
+    margin-bottom: 1rem;
+  }
+  
+  .vote-stats {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .history-controls .row {
+    margin: 0;
+  }
+  
+  .history-controls .col-lg-4,
+  .history-controls .col-lg-3,
+  .history-controls .col-lg-2 {
+    margin-bottom: 1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .header-title {
+    font-size: 1.75rem;
+  }
+  
+  .result-title {
+    font-size: 1.25rem;
+  }
+  
+  .metric-card {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .metric-icon {
+    margin-right: 0;
+    margin-bottom: 1rem;
+  }
+  
+  .history-table {
+    font-size: 0.9rem;
+  }
+  
+  .history-table thead th,
+  .history-table tbody td {
+    padding: 0.75rem 0.5rem;
+  }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize search and filter functionality
+  initializeHistoryFilters();
+  
+  // Initialize sorting functionality
+  initializeTableSorting();
+  
+  // Update vote statistics
+  updateVoteStats();
+});
+
+// Search and Filter Functionality
+function initializeHistoryFilters() {
+  const searchInput = document.getElementById('searchInput');
+  const voteFilter = document.getElementById('voteFilter');
+  const sortBy = document.getElementById('sortBy');
+  
+  if (searchInput) {
+    searchInput.addEventListener('input', filterTable);
+  }
+  
+  if (voteFilter) {
+    voteFilter.addEventListener('change', filterTable);
+  }
+  
+  if (sortBy) {
+    sortBy.addEventListener('change', sortTable);
+  }
+}
+
+function filterTable() {
+  const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+  const voteFilter = document.getElementById('voteFilter').value;
+  const rows = document.querySelectorAll('.vote-row');
+  let visibleCount = 0;
+  
+  rows.forEach(row => {
+    const team = row.getAttribute('data-team');
+    const vote = row.getAttribute('data-vote');
+    
+    // Only search by team name
+    const matchesSearch = team.includes(searchTerm);
+    
+    const matchesVoteFilter = !voteFilter || vote === voteFilter;
+    
+    if (matchesSearch && matchesVoteFilter) {
+      row.style.display = '';
+      visibleCount++;
+    } else {
+      row.style.display = 'none';
+    }
+  });
+  
+  document.getElementById('visibleCount').textContent = visibleCount;
+  updateVoteStats();
+}
+
+function clearFilters() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('voteFilter').value = '';
+  document.getElementById('sortBy').value = 'date-desc';
+  
+  const rows = document.querySelectorAll('.vote-row');
+  rows.forEach(row => {
+    row.style.display = '';
+  });
+  
+  document.getElementById('visibleCount').textContent = rows.length;
+  updateVoteStats();
+  sortTable();
+}
+
+// Table Sorting Functionality
+function initializeTableSorting() {
+  const sortableHeaders = document.querySelectorAll('.sortable');
+  sortableHeaders.forEach(header => {
+    header.addEventListener('click', () => {
+      const sortType = header.getAttribute('data-sort');
+      sortTableByColumn(sortType);
+    });
+  });
+}
+
+function sortTable() {
+  const sortBy = document.getElementById('sortBy').value;
+  const [column, direction] = sortBy.split('-');
+  sortTableByColumn(column, direction);
+}
+
+function sortTableByColumn(column, direction = 'desc') {
+  const tbody = document.querySelector('#historyTable tbody');
+  const rows = Array.from(tbody.querySelectorAll('.vote-row'));
+  
+  rows.sort((a, b) => {
+    let aValue, bValue;
+    
+    switch(column) {
+      case 'team':
+        aValue = a.getAttribute('data-team');
+        bValue = b.getAttribute('data-team');
+        break;
+      case 'card':
+        aValue = a.getAttribute('data-card');
+        bValue = b.getAttribute('data-card');
+        break;
+      case 'vote':
+        aValue = parseInt(a.getAttribute('data-vote'));
+        bValue = parseInt(b.getAttribute('data-vote'));
+        break;
+      case 'date':
+      case 'created':
+        aValue = new Date(a.getAttribute('data-date'));
+        bValue = new Date(b.getAttribute('data-date'));
+        break;
+      default:
+        return 0;
+    }
+    
+    if (direction === 'asc') {
+      return aValue > bValue ? 1 : -1;
+    } else {
+      return aValue < bValue ? 1 : -1;
+    }
+  });
+  
+  // Reorder rows in the table
+  rows.forEach(row => tbody.appendChild(row));
+  
+  // Update sort indicators
+  updateSortIndicators(column, direction);
+}
+
+function updateSortIndicators(activeColumn, direction) {
+  const headers = document.querySelectorAll('.sortable');
+  headers.forEach(header => {
+    const icon = header.querySelector('.sort-icon');
+    const column = header.getAttribute('data-sort');
+    
+    if (column === activeColumn) {
+      icon.className = `fas fa-sort-${direction === 'asc' ? 'up' : 'down'} sort-icon`;
+      icon.style.color = '#667eea';
+    } else {
+      icon.className = 'fas fa-sort sort-icon';
+      icon.style.color = '';
+    }
+  });
+}
+
+// Vote Statistics
+function updateVoteStats() {
+  const visibleRows = document.querySelectorAll('.vote-row:not([style*="display: none"])');
+  let greenCount = 0, yellowCount = 0, redCount = 0;
+  
+  visibleRows.forEach(row => {
+    const vote = row.getAttribute('data-vote');
+    switch(vote) {
+      case '1':
+        greenCount++;
+        break;
+      case '2':
+        yellowCount++;
+        break;
+      case '3':
+        redCount++;
+        break;
+    }
+  });
+  
+  document.getElementById('greenCount').textContent = greenCount;
+  document.getElementById('yellowCount').textContent = yellowCount;
+  document.getElementById('redCount').textContent = redCount;
+}
+
+// Export Functionality
+function exportHistory() {
+  const visibleRows = document.querySelectorAll('.vote-row:not([style*="display: none"])');
+  let csvContent = "data:text/csv;charset=utf-8,";
+  
+  // Add header
+  csvContent += "Team,Session Date,Health Card,Your Vote,Voted At\n";
+  
+  // Add data rows
+  visibleRows.forEach(row => {
+    const team = row.getAttribute('data-team');
+    const session = row.querySelector('.session-date').textContent;
+    const card = row.getAttribute('data-card');
+    const vote = row.querySelector('.vote-badge').textContent;
+    const time = row.getAttribute('data-date');
+    
+    csvContent += `"${team}","${session}","${card}","${vote}","${time}"\n`;
+  });
+  
+  // Create download link
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", "voting_history.csv");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+</script>
 {% endblock %}

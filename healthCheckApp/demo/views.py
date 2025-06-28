@@ -1070,7 +1070,7 @@ def engineer_select_session(request, session_id):
         try:
             # Retrieve the session to be activated
             session_to_activate = get_object_or_404(Session, session_id=session_id)
-            
+
             # Check if the session has expired
             if session_to_activate.is_expired():
                 messages.error(request, f"Session {session_to_activate.date} has expired and cannot be activated.")
@@ -1128,13 +1128,14 @@ def voting_guidance(request):
         'vote_url': 'vote-page'
     })
 
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import Http404
 from .models import Session, Team, HealthCard, Vote, User
 from django.contrib import messages
 from django.views.decorators.csrf import csrf_protect
 from django.utils import timezone
-@csrf_protect
 
+@csrf_protect
 def vote_page(request):
     """
     Handle engineer voting functionality for health check assessments.
@@ -1277,7 +1278,6 @@ def vote_page(request):
                     # Log the error for debugging (in production, use proper logging)
                     print(f"Error updating vote: {vote_update_error}")
                     messages.error(request, "Failed to update your vote. Please try again.")
-                    
             else:
                 # ========================================
                 # CREATE NEW VOTE RECORD
@@ -1318,13 +1318,6 @@ def vote_page(request):
             # Log the error for debugging (in production, use proper logging)
             print(f"Unexpected error in vote processing: {form_processing_error}")
             messages.error(request, "An unexpected error occurred. Please try again.")
-            
-            return render(request, 'engineer_vote.html', {
-                'teams': available_teams,
-                'cards': available_health_cards,
-                'user': current_user,
-                'session': current_session,
-            })
 
     # ========================================
     # GET REQUEST HANDLING (FORM DISPLAY)
@@ -1339,58 +1332,184 @@ def vote_page(request):
 
 
 def profile_view(request):
-    # Get the user_id from the session
-    user_id = request.session.get('user_id')
+    """
+    Display user profile information.
+    
+    This function retrieves the current user's profile data from the session
+    and displays it in a user-friendly format. It handles cases where
+    the user is not logged in or the user record doesn't exist.
+    
+    Args:
+        request: HTTP request object containing session data
+        
+    Returns:
+        Rendered profile template with user data or error page
+        
+    Raises:
+        User.DoesNotExist: If user record is not found in database
+    """
+    # ========================================
+    # SESSION VALIDATION AND USER FETCHING
+    # ========================================
+    # Extract user ID from session storage
+    current_user_id = request.session.get('user_id')
 
-    # Fetch the user from the database using the user_id
+    # Check if user is logged in (has valid session)
+    if not current_user_id:
+        messages.error(request, "You must be logged in to view your profile.")
+        return redirect('engineer-login')
+
+    # ========================================
+    # DATABASE OPERATION AND ERROR HANDLING
+    # ========================================
     try:
-        user = User.objects.get(user_id=user_id)
+        # Fetch user record from database using session user ID
+        current_user = User.objects.get(user_id=current_user_id)
     except User.DoesNotExist:
-        return render(request, 'error.html', {'error': 'User not found.'})
+        # Handle case where user record doesn't exist in database
+        messages.error(request, "User profile not found. Please contact support.")
+        return render(request, 'error.html', {
+            'error': 'User profile not found. Please log in again or contact support.',
+            'error_code': 'USER_NOT_FOUND'
+        })
+    except Exception as database_error:
+        # Handle unexpected database errors
+        print(f"Database error in profile_view: {database_error}")
+        messages.error(request, "An error occurred while loading your profile. Please try again.")
+        return render(request, 'error.html', {
+            'error': 'Unable to load profile. Please try again later.',
+            'error_code': 'DATABASE_ERROR'
+        })
 
-    # Pass the user data to the template
-    return render(request, 'profile.html', {'user': user})
+    # ========================================
+    # SUCCESS RESPONSE
+    # ========================================
+    # Render profile template with user data
+    return render(request, 'profile.html', {
+        'user': current_user,
+        'page_title': 'My Profile'
+    })
 
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
-from .forms import UserUpdateForm  # Assuming you have a form for updating user profile
-from .models import User
-from django.shortcuts import render, redirect
-from .forms import UserUpdateForm
-from .models import User
 
 def profile_update(request):
-    user_id = request.session.get('user_id')  # Get user from session
+    """
+    Handle user profile update functionality.
+    
+    This function processes profile update requests, including form validation,
+    data sanitization, and database updates. It handles both GET requests
+    (display form) and POST requests (process form submission).
+    
+    Args:
+        request: HTTP request object containing form data and session info
+        
+    Returns:
+        Rendered update profile template or redirect to profile page
+        
+    Raises:
+        User.DoesNotExist: If user record is not found in database
+    """
+    # ========================================
+    # SESSION VALIDATION AND USER FETCHING
+    # ========================================
+    # Extract user ID from session storage
+    current_user_id = request.session.get('user_id')
 
-    if not user_id:
+    # Validate user authentication
+    if not current_user_id:
         messages.error(request, "You must be logged in to update your profile.")
-        return redirect('engineer-login')  # Redirect to login if no user is logged in
+        return redirect('engineer-login')
 
+    # ========================================
+    # DATABASE OPERATION AND ERROR HANDLING
+    # ========================================
     try:
-        user = User.objects.get(user_id=user_id)  # Fetch user based on session data
+        # Fetch user record from database using session user ID
+        current_user = User.objects.get(user_id=current_user_id)
     except User.DoesNotExist:
-        messages.error(request, "User not found.")
-        return render(request, 'error.html', {'error': 'User not found.'})  # Handle case if user is not found
+        # Handle case where user record doesn't exist in database
+        messages.error(request, "User profile not found. Please contact support.")
+        return render(request, 'error.html', {
+            'error': 'User profile not found. Please log in again or contact support.',
+            'error_code': 'USER_NOT_FOUND'
+        })
+    except Exception as database_error:
+        # Handle unexpected database errors
+        print(f"Database error in profile_update: {database_error}")
+        messages.error(request, "An error occurred while loading your profile. Please try again.")
+        return render(request, 'error.html', {
+            'error': 'Unable to load profile. Please try again later.',
+            'error_code': 'DATABASE_ERROR'
+        })
 
+    # ========================================
+    # FORM PROCESSING (POST REQUEST HANDLING)
+    # ========================================
     if request.method == 'POST':
-        form = UserUpdateForm(request.POST, request.FILES, instance=user)
+        try:
+            # Initialize form with POST data and file uploads
+            profile_update_form = UserUpdateForm(
+                request.POST, 
+                request.FILES, 
+                instance=current_user
+            )
 
-        if form.is_valid():
-            # If the form is valid, update the user
-            form.save()
-            messages.success(request, "Profile updated successfully.")
+            # ========================================
+            # FORM VALIDATION AND PROCESSING
+            # ========================================
+            if profile_update_form.is_valid():
+                # ========================================
+                # DATABASE UPDATE OPERATION
+                # ========================================
+                try:
+                    # Save the updated user data to database
+                    profile_update_form.save()
+                    
+                    # Display success message to user
+                    messages.success(request, "Profile updated successfully!")
+                    
+                    # Redirect to profile page after successful update
+                    return redirect('profile')
+                    
+                except Exception as save_error:
+                    # Handle database save errors
+                    print(f"Error saving profile update: {save_error}")
+                    messages.error(request, "Failed to save profile changes. Please try again.")
+                    
+            else:
+                # ========================================
+                # FORM VALIDATION ERROR HANDLING
+                # ========================================
+                # Display form validation errors to user
+                error_message = "Please correct the following errors:"
+                for field_name, field_errors in profile_update_form.errors.items():
+                    error_message += f" {field_name}: {', '.join(field_errors)}"
+                
+                messages.error(request, error_message)
 
+        except Exception as form_processing_error:
+            # ========================================
+            # GENERAL FORM PROCESSING ERROR HANDLING
+            # ========================================
+            # Log the error for debugging (in production, use proper logging)
+            print(f"Unexpected error in profile update form processing: {form_processing_error}")
+            messages.error(request, "An unexpected error occurred while processing your request. Please try again.")
 
-            # Redirect to profile after successful update
-            return redirect('profile')
-        else:
-            messages.error(request, "There was an error updating your profile.")
-
+    # ========================================
+    # GET REQUEST HANDLING (FORM DISPLAY)
+    # ========================================
     else:
-        # Initializing form with existing user data
-        form = UserUpdateForm(instance=user)
+        # Initialize form with existing user data for display
+        profile_update_form = UserUpdateForm(instance=current_user)
 
-    return render(request, 'update_profile.html', {'form': form, 'user': user})
+    # ========================================
+    # TEMPLATE RENDERING
+    # ========================================
+    # Render update profile template with form and user data
+    return render(request, 'update_profile.html', {
+        'form': profile_update_form,
+        'user': current_user,
+        'page_title': 'Update Profile'
+    })
 
 import matplotlib
 matplotlib.use('Agg')  # Use a non-interactive backend
@@ -1416,134 +1535,311 @@ import matplotlib.pyplot as plt
 
 @csrf_protect
 def team_summary(request):
-    user_id = request.session.get('user_id')
-    if not user_id:
+    """
+    Handle team summary display with interactive charts and filtering.
+    
+    This function provides both individual and team vote summaries with:
+    - Session and health card filtering
+    - Chart.js data preparation for interactive charts
+    - Individual and team view modes
+    - Dynamic data based on selected filters
+    
+    Args:
+        request: HTTP request object containing filter parameters
+        
+    Returns:
+        Rendered template with chart data and filter options
+    """
+    # ========================================
+    # INITIAL SETUP AND VALIDATION
+    # ========================================
+    # Get user from session and validate authentication
+    current_user_id = request.session.get('user_id')
+    if not current_user_id:
+        messages.error(request, "You must be logged in to view summaries.")
         return redirect('engineer-login')
 
-    user = get_object_or_404(User, user_id=user_id)
-    team = user.team
-    team_sessions = Session.objects.all().order_by('-created_at')
+    # Fetch user and team information
+    try:
+        current_user = get_object_or_404(User, user_id=current_user_id)
+        current_team = current_user.team
+    except Http404:
+        messages.error(request, "User not found. Please log in again.")
+        return redirect('engineer-login')
+
+    # ========================================
+    # FILTER PARAMETERS EXTRACTION
+    # ========================================
+    # Get filter parameters from request
     selected_session_id = request.POST.get('session_id') or request.GET.get('session_id')
-    view_type = request.POST.get('view_type') or 'team'
-    selected_card_id = request.POST.get('card')
+    selected_health_card_id = request.POST.get('card') or request.GET.get('card')
+    selected_view_type = request.POST.get('view_type') or 'team'
 
-    session = None
+    # Fetch all available sessions and health cards
+    available_sessions = Session.objects.all().order_by('-created_at')
+    available_health_cards = HealthCard.objects.all()
+
+    # ========================================
+    # SESSION SELECTION AND VALIDATION
+    # ========================================
+    # Determine which session to use
+    current_session = None
     if selected_session_id:
-        session = get_object_or_404(Session, session_id=selected_session_id)
-    elif team_sessions.exists():
-        session = team_sessions.first()
+        try:
+            current_session = get_object_or_404(Session, session_id=selected_session_id)
+        except Http404:
+            messages.error(request, "Selected session not found.")
+            current_session = available_sessions.first() if available_sessions.exists() else None
+    elif available_sessions.exists():
+        current_session = available_sessions.first()
 
-    if not session:
+    # Handle case where no sessions are available
+    if not current_session:
         return render(request, 'team_summary.html', {
-            'user': user,
-            'cards': [],
-            'sessions': team_sessions,
+            'user': current_user,
+            'cards': available_health_cards,
+            'sessions': available_sessions,
             'no_sessions': True,
+            'chart_data': None,
+            'view_type': selected_view_type,
         })
 
-    cards = HealthCard.objects.all()
-    chart_img_individual = chart_img_selected = chart_img_all = None
+    # ========================================
+    # CHART DATA PREPARATION
+    # ========================================
+    chart_data = None
     no_votes = False
 
-    if view_type == 'individual':
-        votes = Vote.objects.filter(session=session, user=user)
-        red_data, Amber_data, green_data, card_titles = [], [], [], []
-
-        for card in cards:
-            v = votes.filter(card=card)
-            red_data.append(v.filter(vote_value=3).count())
-            Amber_data.append(v.filter(vote_value=2).count())
-            green_data.append(v.filter(vote_value=1).count())
-            card_titles.append(card.title)
-
-        if sum(red_data + Amber_data + green_data) == 0:
+    if selected_view_type == 'individual':
+        # ========================================
+        # INDIVIDUAL VIEW DATA PREPARATION
+        # ========================================
+        # Get user's votes for the selected session
+        user_votes = Vote.objects.filter(session=current_session, user=current_user)
+        
+        if selected_health_card_id:
+            # Filter by specific health card
+            try:
+                selected_card = available_health_cards.get(card_id=selected_health_card_id)
+                user_votes = user_votes.filter(card=selected_card)
+                
+                # Prepare data for single card chart
+                vote_counts = {
+                    'green': user_votes.filter(vote_value=1).count(),
+                    'amber': user_votes.filter(vote_value=2).count(),
+                    'red': user_votes.filter(vote_value=3).count()
+                }
+                
+                if sum(vote_counts.values()) > 0:
+                    chart_data = {
+                        'type': 'individual_single_card',
+                        'labels': [selected_card.title],
+                        'datasets': [
+                            {
+                                'label': 'Green',
+                                'data': [vote_counts['green']],
+                                'backgroundColor': '#28a745',
+                                'borderColor': '#28a745',
+                                'borderWidth': 1
+                            },
+                            {
+                                'label': 'Amber',
+                                'data': [vote_counts['amber']],
+                                'backgroundColor': '#ffc107',
+                                'borderColor': '#ffc107',
+                                'borderWidth': 1
+                            },
+                            {
+                                'label': 'Red',
+                                'data': [vote_counts['red']],
+                                'backgroundColor': '#dc3545',
+                                'borderColor': '#dc3545',
+                                'borderWidth': 1
+                            }
+                        ],
+                        'title': f"{current_user.username}'s Vote for {selected_card.title}",
+                        'subtitle': f"Session: {current_session.date.strftime('%B %d, %Y')}"
+                    }
+                else:
+                    no_votes = True
+                    
+            except HealthCard.DoesNotExist:
+                messages.error(request, "Selected health card not found.")
             no_votes = True
         else:
-            fig, ax = plt.subplots(figsize=(10, 6))
-            x = range(len(card_titles))
-            ax.bar(x, green_data, label='Green', color='green')
-            ax.bar(x, Amber_data, bottom=green_data, label='Amber', color='#FFBF00')
+            # Show all cards for individual
+            card_data = []
+            card_labels = []
             
-            ax.bar(x, red_data, bottom=[g + y for g, y in zip(green_data, Amber_data)], label='Red', color='red')
-            ax.set_xticks(x)
-            ax.set_xticklabels(card_titles, rotation=45, ha='right')
-            ax.set_ylabel('Votes')
-            ax.set_title(f"{user.username}'s Vote Summary - {session.date}")
-            ax.legend()
+            for card in available_health_cards:
+                card_votes = user_votes.filter(card=card)
+                card_data.append({
+                    'green': card_votes.filter(vote_value=1).count(),
+                    'amber': card_votes.filter(vote_value=2).count(),
+                    'red': card_votes.filter(vote_value=3).count()
+                })
+                card_labels.append(card.title)
+            
+            # Check if any votes exist
+            total_votes = sum(sum(card.values()) for card in card_data)
+            if total_votes > 0:
+                chart_data = {
+                    'type': 'individual_all_cards',
+                    'labels': card_labels,
+                    'datasets': [
+                        {
+                            'label': 'Green',
+                            'data': [card['green'] for card in card_data],
+                            'backgroundColor': '#28a745',
+                            'borderColor': '#28a745',
+                            'borderWidth': 1
+                        },
+                        {
+                            'label': 'Amber',
+                            'data': [card['amber'] for card in card_data],
+                            'backgroundColor': '#ffc107',
+                            'borderColor': '#ffc107',
+                            'borderWidth': 1
+                        },
+                        {
+                            'label': 'Red',
+                            'data': [card['red'] for card in card_data],
+                            'backgroundColor': '#dc3545',
+                            'borderColor': '#dc3545',
+                            'borderWidth': 1
+                        }
+                    ],
+                    'title': f"{current_user.username}'s Vote Summary",
+                    'subtitle': f"Session: {current_session.date.strftime('%B %d, %Y')}"
+                }
+            else:
+                no_votes = True
 
-            buf = io.BytesIO()
-            FigureCanvas(fig).print_png(buf)
-            chart_img_individual = base64.b64encode(buf.getvalue()).decode('utf-8')
-            plt.close(fig)
-
-    elif view_type == 'team':
-        if selected_card_id:
+    elif selected_view_type == 'team':
+        # ========================================
+        # TEAM VIEW DATA PREPARATION
+        # ========================================
+        if selected_health_card_id:
+            # Filter by specific health card for team
             try:
-                selected_card = cards.get(card_id=selected_card_id)
-                votes = Vote.objects.filter(session=session, card=selected_card, team=team)
-                red = votes.filter(vote_value=3).count()
-                Amber = votes.filter(vote_value=2).count()
-                green = votes.filter(vote_value=1).count()
-
-                if red + Amber + green == 0:
-                    no_votes = True
+                selected_card = available_health_cards.get(card_id=selected_health_card_id)
+                team_votes = Vote.objects.filter(
+                    session=current_session, 
+                    card=selected_card, 
+                    team=current_team
+                )
+                
+                vote_counts = {
+                    'green': team_votes.filter(vote_value=1).count(),
+                    'amber': team_votes.filter(vote_value=2).count(),
+                    'red': team_votes.filter(vote_value=3).count()
+                }
+                
+                if sum(vote_counts.values()) > 0:
+                    chart_data = {
+                        'type': 'team_single_card',
+                        'labels': [selected_card.title],
+                        'datasets': [
+                            {
+                                'label': 'Green',
+                                'data': [vote_counts['green']],
+                                'backgroundColor': '#28a745',
+                                'borderColor': '#28a745',
+                                'borderWidth': 1
+                            },
+                            {
+                                'label': 'Amber',
+                                'data': [vote_counts['amber']],
+                                'backgroundColor': '#ffc107',
+                                'borderColor': '#ffc107',
+                                'borderWidth': 1
+                            },
+                            {
+                                'label': 'Red',
+                                'data': [vote_counts['red']],
+                                'backgroundColor': '#dc3545',
+                                'borderColor': '#dc3545',
+                                'borderWidth': 1
+                            }
+                        ],
+                        'title': f"Team Votes for {selected_card.title}",
+                        'subtitle': f"Session: {current_session.date.strftime('%B %d, %Y')}"
+                    }
                 else:
-                    fig1, ax1 = plt.subplots()
-                    ax1.bar(selected_card.title, green, color='green', label='Green')
-                    ax1.bar(selected_card.title, Amber, bottom=green, color='#FFBF00', label='Amber')
-                    ax1.bar(selected_card.title, red, bottom=green + Amber, color='red', label='Red')
-                    ax1.set_title(f"Votes for {selected_card.title} - {session.date}")
-                    ax1.legend()
-
-                    buf1 = io.BytesIO()
-                    FigureCanvas(fig1).print_png(buf1)
-                    chart_img_selected = base64.b64encode(buf1.getvalue()).decode('utf-8')
-                    plt.close(fig1)
+                    no_votes = True
 
             except HealthCard.DoesNotExist:
+                messages.error(request, "Selected health card not found.")
                 no_votes = True
         else:
-            red_data, Amber_data, green_data, card_titles = [], [], [], []
-
-            for card in cards:
-                votes = Vote.objects.filter(session=session, card=card, team=team)
-                red_data.append(votes.filter(vote_value=3).count())
-                Amber_data.append(votes.filter(vote_value=2).count())
-                green_data.append(votes.filter(vote_value=1).count())
-                card_titles.append(card.title)
-
-            if sum(red_data + Amber_data + green_data) == 0:
-                no_votes = True
+            # Show all cards for team
+            card_data = []
+            card_labels = []
+            
+            for card in available_health_cards:
+                card_votes = Vote.objects.filter(
+                    session=current_session, 
+                    card=card, 
+                    team=current_team
+                )
+                card_data.append({
+                    'green': card_votes.filter(vote_value=1).count(),
+                    'amber': card_votes.filter(vote_value=2).count(),
+                    'red': card_votes.filter(vote_value=3).count()
+                })
+                card_labels.append(card.title)
+            
+            # Check if any votes exist
+            total_votes = sum(sum(card.values()) for card in card_data)
+            if total_votes > 0:
+                chart_data = {
+                    'type': 'team_all_cards',
+                    'labels': card_labels,
+                    'datasets': [
+                        {
+                            'label': 'Green',
+                            'data': [card['green'] for card in card_data],
+                            'backgroundColor': '#28a745',
+                            'borderColor': '#28a745',
+                            'borderWidth': 1
+                        },
+                        {
+                            'label': 'Amber',
+                            'data': [card['amber'] for card in card_data],
+                            'backgroundColor': '#ffc107',
+                            'borderColor': '#ffc107',
+                            'borderWidth': 1
+                        },
+                        {
+                            'label': 'Red',
+                            'data': [card['red'] for card in card_data],
+                            'backgroundColor': '#dc3545',
+                            'borderColor': '#dc3545',
+                            'borderWidth': 1
+                        }
+                    ],
+                    'title': f"Team Vote Summary - All Cards",
+                    'subtitle': f"Session: {current_session.date.strftime('%B %d, %Y')}"
+                }
             else:
-                fig2, ax2 = plt.subplots(figsize=(10, 6))
-                x = range(len(card_titles))
-                ax2.bar(x, green_data, label='Green', color='green')
-                ax2.bar(x, Amber_data, bottom=green_data, color='#FFBF00', label='Amber')
-                ax2.bar(x, red_data, bottom=[g + y for g, y in zip(green_data, Amber_data)], label='Red', color='red')
-                ax2.set_xticks(x)
-                ax2.set_xticklabels(card_titles, rotation=45, ha='right')
-                ax2.set_ylabel('Votes')
-                ax2.set_title(f"Team Vote Summary - All Cards ({session.date})")
-                ax2.legend()
+                no_votes = True
 
-                buf2 = io.BytesIO()
-                FigureCanvas(fig2).print_png(buf2)
-                chart_img_all = base64.b64encode(buf2.getvalue()).decode('utf-8')
-                plt.close(fig2)
-
-    return render(request, 'team_summary.html', {
-        'user': user,
-        'cards': cards,
-        'sessions': team_sessions,
-        'selected_session_id': session.session_id,
-        'selected_card_id': selected_card_id,
-        'view_type': view_type,
-        'chart_img_individual': chart_img_individual,
-        'chart_img_selected': chart_img_selected,
-        'chart_img_all': chart_img_all,
+    # ========================================
+    # CONTEXT PREPARATION AND RESPONSE
+    # ========================================
+    context = {
+        'user': current_user,
+        'cards': available_health_cards,
+        'sessions': available_sessions,
+        'selected_session_id': current_session.session_id,
+        'selected_card_id': selected_health_card_id,
+        'view_type': selected_view_type,
+        'chart_data': chart_data,
         'no_votes': no_votes,
         'no_sessions': False,
-    })
+    }
+
+    return render(request, 'team_summary.html', context)
 
 
 
@@ -1750,7 +2046,6 @@ def tl_vote_page(request):
                     # Log the error for debugging (in production, use proper logging)
                     print(f"Error updating vote: {vote_update_error}")
                     messages.error(request, "Failed to update your vote. Please try again.")
-                    
             else:
                 # ========================================
                 # CREATE NEW VOTE RECORD
@@ -1791,13 +2086,6 @@ def tl_vote_page(request):
             # Log the error for debugging (in production, use proper logging)
             print(f"Unexpected error in vote processing: {form_processing_error}")
             messages.error(request, "An unexpected error occurred. Please try again.")
-            
-            return render(request, 'tl_vote.html', {
-                'teams': available_teams,
-                'cards': available_health_cards,
-                'user': current_user,
-                'session': current_session,
-            })
 
     # ========================================
     # GET REQUEST HANDLING (FORM DISPLAY)
@@ -1946,8 +2234,8 @@ def team_leader_summary(request):
                 else:
                     fig1, ax1 = plt.subplots()
                     ax1.bar(selected_card.title, green, color='green', label='Green')
-                    ax1.bar(selected_card.title, amber, bottom=green, color='#FFBF00', label='Amber')
-                    ax1.bar(selected_card.title, red, bottom=green + amber, color='red', label='Red')
+                    ax1.bar(selected_card.title, Amber, bottom=green, color='#FFBF00', label='Amber')
+                    ax1.bar(selected_card.title, red, bottom=green + Amber, color='red', label='Red')
                     ax1.set_title(f"Votes for {selected_card.title} - {session.date}")
                     ax1.legend()
 
@@ -1959,25 +2247,25 @@ def team_leader_summary(request):
             except HealthCard.DoesNotExist:
                 no_votes = True
         else:
-            red_data, amber_data, green_data, card_titles = [], [], [], []
+            red_data, Amber_data, green_data, card_titles = [], [], [], []
 
             for card in cards:
                 print("Found votes with team:", Vote.objects.filter(session=session, card=card, team=team))  # filtered
 
                 votes = Vote.objects.filter(session=session, card=card, team=team)
                 red_data.append(votes.filter(vote_value=3).count())
-                amber_data.append(votes.filter(vote_value=2).count())
+                Amber_data.append(votes.filter(vote_value=2).count())
                 green_data.append(votes.filter(vote_value=1).count())
                 card_titles.append(card.title)
 
-            if sum(red_data + amber_data + green_data) == 0:
+            if sum(red_data + Amber_data + green_data) == 0:
                 no_votes = True
             else:
                 fig2, ax2 = plt.subplots(figsize=(10, 6))
                 x = range(len(card_titles))
                 ax2.bar(x, green_data, label='Green', color='green')
-                ax2.bar(x, amber_data, bottom=green_data, color='#FFBF00', label='Amber')
-                ax2.bar(x, red_data, bottom=[g + y for g, y in zip(green_data, amber_data)], label='Red', color='red')
+                ax2.bar(x, Amber_data, bottom=green_data, label='Amber', color='#FFBF00')
+                ax2.bar(x, red_data, bottom=[g + y for g, y in zip(green_data, Amber_data)], label='Red', color='red')
                 ax2.set_xticks(x)
                 ax2.set_xticklabels(card_titles, rotation=45, ha='right')
                 ax2.set_ylabel('Votes')
@@ -2175,50 +2463,192 @@ from django.http import HttpResponse
 # @login_required
 
 def engineer_progress_form(request):
-    cards = HealthCard.objects.all()
-    sessions = Session.objects.all()
-    selected_card_id = request.GET.get('card_id')
+    """
+    Handle engineer progress view functionality with team progress and vote history.
+    
+    This function provides two main views:
+    1. Team Progress View: Shows team summary for selected session and health card
+    2. Vote History View: Shows engineer's complete voting history
+    
+    The function handles both GET requests for form display and data filtering,
+    including session validation, database queries, and error handling.
+    
+    Args:
+        request: HTTP request object containing query parameters and session data
+        
+    Returns:
+        Rendered engineer progress view template with filtered data
+        
+    Raises:
+        Http404: If user, health card, or session not found in database
+    """
+    # ========================================
+    # INITIAL DATA FETCHING AND VALIDATION
+    # ========================================
+    # Fetch all available health cards and sessions for form dropdowns
+    available_health_cards = HealthCard.objects.all()
+    available_sessions = Session.objects.all()
+    
+    # Extract filter parameters from request
+    selected_health_card_id = request.GET.get('card_id')
     selected_session_id = request.GET.get('session_id')
-    view_mode = request.GET.get('view', 'team')  # 'team' or 'history'
+    current_view_mode = request.GET.get('view', 'team')  # 'team' or 'history'
 
-    user_id = request.session.get('user_id')
-    user = get_object_or_404(User, user_id=user_id)
-    team = user.team
+    # ========================================
+    # USER AUTHENTICATION AND TEAM FETCHING
+    # ========================================
+    # Get current user from session
+    current_user_id = request.session.get('user_id')
+    
+    # Validate user authentication
+    if not current_user_id:
+        messages.error(request, "You must be logged in to view progress.")
+        return redirect('engineer-login')
 
-    summary = None
-    engineer_vote = None
-    show_results = False
-    selected_card = selected_session = None
-    vote_history = None
+    # Fetch user and team information
+    try:
+        current_user = get_object_or_404(User, user_id=current_user_id)
+        current_user_team = current_user.team
+    except Http404:
+        messages.error(request, "User not found. Please log in again.")
+        return redirect('engineer-login')
+    except Exception as user_fetch_error:
+        # Handle unexpected database errors
+        print(f"Database error fetching user in engineer_progress_form: {user_fetch_error}")
+        messages.error(request, "An error occurred while loading your profile. Please try again.")
+        return render(request, 'error.html', {
+            'error': 'Unable to load user data. Please try again later.',
+            'error_code': 'DATABASE_ERROR'
+        })
 
-    if view_mode == 'history':
-        vote_history = Vote.objects.filter(user=user).select_related('card', 'session').order_by('session__date')
-    elif selected_card_id and selected_session_id:
-        selected_card = get_object_or_404(HealthCard, pk=selected_card_id)
-        selected_session = get_object_or_404(Session, pk=selected_session_id)
+    # ========================================
+    # VARIABLE INITIALIZATION
+    # ========================================
+    # Initialize variables for team progress view
+    team_progress_summary = None
+    current_user_vote = None
+    should_show_results = False
+    selected_health_card = None
+    selected_session = None
+    
+    # Initialize variable for vote history view
+    user_vote_history = None
 
+    # ========================================
+    # VIEW MODE PROCESSING
+    # ========================================
+    if current_view_mode == 'history':
+        # ========================================
+        # VOTE HISTORY VIEW PROCESSING
+        # ========================================
         try:
-            summary = ProgressSummary.objects.get(team=team, card=selected_card, session=selected_session)
+            # Fetch user's complete voting history with related data
+            user_vote_history = Vote.objects.filter(
+                user=current_user
+            ).select_related(
+                'card', 
+                'session', 
+                'team'
+            ).order_by('-session__date', '-created_at')
+            
+        except Exception as history_fetch_error:
+            # Handle database errors when fetching vote history
+            print(f"Error fetching vote history: {history_fetch_error}")
+            messages.error(request, "Unable to load your voting history. Please try again.")
+            user_vote_history = []
+            
+    elif selected_health_card_id and selected_session_id:
+        # ========================================
+        # TEAM PROGRESS VIEW PROCESSING
+        # ========================================
+        try:
+            # Fetch selected health card and session objects
+            selected_health_card = get_object_or_404(HealthCard, pk=selected_health_card_id)
+            selected_session = get_object_or_404(Session, pk=selected_session_id)
+            
+        except Http404 as not_found_error:
+            # Handle case where health card or session doesn't exist
+            messages.error(request, "Selected health card or session not found. Please try again.")
+            return render(request, 'engineer_progress_view.html', {
+                'cards': available_health_cards,
+                'sessions': available_sessions,
+                'view_mode': current_view_mode,
+                'team': current_user_team,
+                'vote_history': [],
+                'error_message': 'Selected data not found'
+            })
+        except Exception as data_fetch_error:
+            # Handle unexpected database errors
+            print(f"Error fetching health card or session: {data_fetch_error}")
+            messages.error(request, "An error occurred while loading the selected data. Please try again.")
+            return render(request, 'error.html', {
+                'error': 'Unable to load selected data. Please try again later.',
+                'error_code': 'DATA_FETCH_ERROR'
+            })
+
+        # ========================================
+        # TEAM PROGRESS SUMMARY FETCHING
+        # ========================================
+        try:
+            # Fetch team progress summary for the selected combination
+            team_progress_summary = ProgressSummary.objects.get(
+                team=current_user_team,
+                card=selected_health_card,
+                session=selected_session
+            )
         except ProgressSummary.DoesNotExist:
-            summary = None
+            # Handle case where no progress summary exists for this combination
+            team_progress_summary = None
+            messages.info(request, "No progress summary available for the selected team, card, and session combination.")
+        except Exception as summary_fetch_error:
+            # Handle unexpected database errors
+            print(f"Error fetching progress summary: {summary_fetch_error}")
+            messages.error(request, "Unable to load progress summary. Please try again.")
+            team_progress_summary = None
 
-        engineer_vote = Vote.objects.filter(user=user, card=selected_card, session=selected_session).first()
-        show_results = True
+        # ========================================
+        # USER VOTE FETCHING
+        # ========================================
+        try:
+            # Fetch user's vote for the selected combination
+            current_user_vote = Vote.objects.filter(
+                user=current_user,
+                card=selected_health_card,
+                session=selected_session
+            ).first()
+        except Exception as vote_fetch_error:
+            # Handle unexpected database errors
+            print(f"Error fetching user vote: {vote_fetch_error}")
+            messages.error(request, "Unable to load your vote data. Please try again.")
+            current_user_vote = None
 
-    return render(request, 'engineer_progress_view.html', {
-        'cards': cards,
-        'sessions': sessions,
-        'summary': summary,
-        'engineer_vote': engineer_vote,
-        'selected_card': selected_card,
+        # Mark that results should be displayed
+        should_show_results = True
+
+    # ========================================
+    # TEMPLATE CONTEXT PREPARATION
+    # ========================================
+    # Prepare context data for template rendering
+    template_context = {
+        'cards': available_health_cards,
+        'sessions': available_sessions,
+        'summary': team_progress_summary,
+        'engineer_vote': current_user_vote,
+        'selected_card': selected_health_card,
         'selected_session': selected_session,
-        'selected_card_id': int(selected_card_id) if selected_card_id else None,
+        'selected_card_id': int(selected_health_card_id) if selected_health_card_id else None,
         'selected_session_id': int(selected_session_id) if selected_session_id else None,
-        'team': team,
-        'show_results': show_results,
-        'vote_history': vote_history,
-        'view_mode': view_mode,
-    })
+        'team': current_user_team,
+        'show_results': should_show_results,
+        'vote_history': user_vote_history,
+        'view_mode': current_view_mode,
+    }
+
+    # ========================================
+    # TEMPLATE RENDERING
+    # ========================================
+    # Render the engineer progress view template with prepared context
+    return render(request, 'engineer_progress_view.html', template_context)
 
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required

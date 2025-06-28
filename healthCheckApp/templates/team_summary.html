@@ -1,106 +1,432 @@
 {% extends 'engineer_base.html' %}
+{% load static %}
+
+{% block title %}Team Summary - Health Check App{% endblock %}
+
 {% block content %}
+<!-- Page Header -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card border-0 shadow-lg" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+      <div class="card-body text-white text-center py-4">
+        <h1 class="display-6 fw-bold mb-3">
+          <i class="fas fa-chart-bar me-3"></i>Team Summary Dashboard
+        </h1>
+        <p class="lead mb-0">Analyze voting patterns and team health metrics</p>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Quick Actions -->
 {% include 'includes/engineer_quick_actions.html' with exclude_action='summary' %}
 
-<div class="text-center mt-4">
-
-  {% if messages %}
-    <div style="margin-bottom: 20px;">
-        {% for message in messages %}
-            <div class="alert 
-                {% if message.tags == 'success' %}alert-success
-                {% elif message.tags == 'error' %}alert-danger
-                {% else %}alert-info{% endif %}"
-                style="padding: 10px; border-radius: 5px; margin-bottom: 10px; border: 1px solid #ccc;">
-                {{ message }}
-            </div>
-        {% endfor %}
-    </div>
+<!-- Messages Section -->
+{% if messages %}
+<div class="row mb-4">
+  <div class="col-12">
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+        <i class="fas 
+          {% if message.tags == 'success' %}fa-check-circle text-success
+          {% elif message.tags == 'error' %}fa-exclamation-triangle text-danger
+          {% else %}fa-info-circle text-info{% endif %} me-2"></i>
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  </div>
+</div>
 {% endif %}
 
-  <form method="POST">
-    {% csrf_token %}
+<!-- Filter Controls -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">
+          <i class="fas fa-filter me-2"></i>Filter Options
+        </h5>
+      </div>
+      <div class="card-body">
+        <form method="POST" id="filterForm">
+          {% csrf_token %}
+          
+          <!-- View Type Toggle -->
+          <div class="row mb-3">
+            <div class="col-12">
+              <label class="form-label fw-bold">
+                <i class="fas fa-eye me-2 text-primary"></i>View Type
+              </label>
+              <div class="btn-group w-100" role="group">
+                <input type="radio" class="btn-check" name="view_type" value="individual" id="individualView" 
+                       {% if view_type == 'individual' %}checked{% endif %}>
+                <label class="btn btn-outline-primary" for="individualView">
+                  <i class="fas fa-user me-2"></i>My Summary
+                </label>
+                
+                <input type="radio" class="btn-check" name="view_type" value="team" id="teamView" 
+                       {% if view_type == 'team' %}checked{% endif %}>
+                <label class="btn btn-outline-primary" for="teamView">
+                  <i class="fas fa-users me-2"></i>Team Summary
+                </label>
+              </div>
+            </div>
+          </div>
 
-    <div class="mb-3">
-      <label for="session">Select Session:</label>
-      <select name="session_id" id="session" onchange="this.form.submit()" required>
-          {% for s in sessions %}
-              <option value="{{ s.session_id }}" {% if s.session_id == selected_session_id %}selected{% endif %}>
-                  {{ s.date }}
-              </option>
-          {% endfor %}
-      </select>
+          <!-- Session Selection -->
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="session" class="form-label fw-bold">
+                <i class="fas fa-calendar me-2 text-primary"></i>Select Session
+              </label>
+              <select name="session_id" id="session" class="form-select" onchange="this.form.submit()" required>
+                {% for session in sessions %}
+                  <option value="{{ session.session_id }}" {% if session.session_id == selected_session_id %}selected{% endif %}>
+                    {{ session.date|date:"F d, Y" }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            
+            <!-- Health Card Selection -->
+            <div class="col-md-6">
+              <label for="card" class="form-label fw-bold">
+                <i class="fas fa-heartbeat me-2 text-primary"></i>Select Health Card
+              </label>
+              <select name="card" id="card" class="form-select" onchange="this.form.submit()">
+                <option value="">-- All Health Cards --</option>
+                {% for card in cards %}
+                  <option value="{{ card.card_id }}" {% if selected_card_id == card.card_id|stringformat:"s" %}selected{% endif %}>
+                    {{ card.title }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <!-- Apply Filters Button -->
+          <div class="row">
+            <div class="col-12 text-center">
+              <button type="submit" class="btn btn-primary btn-lg px-5">
+                <i class="fas fa-search me-2"></i>Apply Filters
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
-
-    <!-- Toggle View Buttons -->
-    <div class="mb-3">
-      <button type="submit" name="view_type" value="individual" class="btn btn-outline-primary {% if view_type == 'individual' %}active{% endif %}">
-        Show My Summary
-      </button>
-      <button type="submit" name="view_type" value="team" class="btn btn-outline-success {% if view_type == 'team' %}active{% endif %}">
-        Show Team Summary
-      </button>
-    </div>
-
-    {% if view_type == "team" %}
-      <!-- Card Selector -->
-      <label for="card">Select Health Card:</label>
-      <select name="card" id="card" onchange="this.form.submit()">
-        <option value="">-- All Cards --</option>
-        {% for card in cards %}
-          <option value="{{ card.card_id }}" {% if selected_card_id == card.card_id|stringformat:"s" %}selected{% endif %}>
-            {{ card.title }}
-          </option>
-        {% endfor %}
-      </select>
-    {% endif %}
-  </form>
+  </div>
 </div>
 
-<!-- INDIVIDUAL VIEW -->
-{% if view_type == 'individual' and chart_img_individual %}
-  <div class="text-center mt-4">
-    <h4>Your Vote Summary ({{ user.username }})</h4>
-    <img src="data:image/png;base64,{{ chart_img_individual }}" alt="Individual Chart" style="max-width: 70%;">
+<!-- Chart Display Section -->
+{% if chart_data %}
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card border-0 shadow-lg">
+      <div class="card-header bg-success text-white">
+        <h5 class="mb-0">
+          <i class="fas fa-chart-pie me-2"></i>{{ chart_data.title }}
+        </h5>
+        <small>{{ chart_data.subtitle }}</small>
+      </div>
+      <div class="card-body p-4">
+        <div class="row">
+          <div class="col-lg-8 col-md-12">
+            <!-- Chart Container -->
+            <div class="chart-container" style="position: relative; height: 400px;">
+              <canvas id="voteChart"></canvas>
+            </div>
+          </div>
+          <div class="col-lg-4 col-md-12">
+            <!-- Chart Legend and Stats -->
+            <div class="chart-legend">
+              <h6 class="fw-bold mb-3">Vote Distribution</h6>
+              <div class="legend-item d-flex align-items-center mb-2">
+                <div class="legend-color bg-success rounded me-2" style="width: 20px; height: 20px;"></div>
+                <span class="flex-grow-1">Green (Performing Well)</span>
+                <span class="badge bg-success" id="greenCount">0</span>
+              </div>
+              <div class="legend-item d-flex align-items-center mb-2">
+                <div class="legend-color bg-warning rounded me-2" style="width: 20px; height: 20px;"></div>
+                <span class="flex-grow-1">Amber (Some Concerns)</span>
+                <span class="badge bg-warning" id="amberCount">0</span>
+              </div>
+              <div class="legend-item d-flex align-items-center mb-2">
+                <div class="legend-color bg-danger rounded me-2" style="width: 20px; height: 20px;"></div>
+                <span class="flex-grow-1">Red (Critical Issues)</span>
+                <span class="badge bg-danger" id="redCount">0</span>
+              </div>
+              
+              <hr class="my-3">
+              
+              <div class="stats-summary">
+                <h6 class="fw-bold mb-2">Summary</h6>
+                <div class="stat-item d-flex justify-content-between mb-1">
+                  <span>Total Votes:</span>
+                  <span class="fw-bold" id="totalVotes">0</span>
+                </div>
+                <div class="stat-item d-flex justify-content-between mb-1">
+                  <span>Health Score:</span>
+                  <span class="fw-bold text-success" id="healthScore">0%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
+</div>
 {% endif %}
 
-<!-- TEAM VIEW - SPECIFIC CARD -->
-{% if view_type == 'team' and chart_img_selected %}
-  <div class="text-center mt-4">
-    <h4>Selected Health Card Vote Summary (All Engineers)</h4>
-    <img src="data:image/png;base64,{{ chart_img_selected }}" alt="Selected Card Chart" style="max-width: 80%;">
+<!-- No Data Messages -->
+{% if no_votes %}
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body text-center py-5">
+        <i class="fas fa-chart-line fa-4x text-muted mb-3"></i>
+        <h5 class="text-muted">No Votes Available</h5>
+        <p class="text-muted">
+          {% if view_type == 'individual' %}
+            No votes found for {{ user.username }} in the selected session.
+          {% else %}
+            No team votes found for the selected session and filters.
+          {% endif %}
+        </p>
+        <p class="text-muted small">Try selecting a different session or health card.</p>
+      </div>
+    </div>
   </div>
-{% endif %}
-
-<!-- TEAM VIEW - ALL CARDS -->
-{% if view_type == 'team' and not selected_card_id and chart_img_all %}
-  <div class="text-center mt-5">
-    <h4>All Health Cards Vote Summary (All Engineers)</h4>
-    <img src="data:image/png;base64,{{ chart_img_all }}" alt="All Cards Chart" style="max-width: 70%;">
-  </div>
-{% endif %}
-
-<!-- Team Summary Fallback Message -->
-{% if view_type == 'team' and not chart_img_selected and not chart_img_all %}
-  <div class="alert alert-warning mt-4 text-center">
-    No team votes available for the selected session.
-  </div>
-{% endif %}
-
-<!-- Individual Summary Fallback Message -->
-{% if view_type == 'individual' and not chart_img_individual %}
-  <div class="alert alert-warning mt-4 text-center">
-    No {{user.username}} votes available for the selected session.
-  </div>
+</div>
 {% endif %}
 
 {% if no_sessions %}
-  <div class="alert alert-warning mt-4 text-center">No sessions available for your team.</div>
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body text-center py-5">
+        <i class="fas fa-calendar-times fa-4x text-muted mb-3"></i>
+        <h5 class="text-muted">No Sessions Available</h5>
+        <p class="text-muted">There are no health check sessions available for your team.</p>
+        <p class="text-muted small">Contact your administrator to create new sessions.</p>
+      </div>
+    </div>
+  </div>
+</div>
 {% endif %}
 
+<!-- Chart.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+{% if chart_data %}
+<script>
+// Global chart data from Django
+window.chartData = {
+    labels: {{ chart_data.labels|safe }},
+    datasets: {{ chart_data.datasets|safe }},
+    title: '{{ chart_data.title|escapejs }}',
+    subtitle: '{{ chart_data.subtitle|escapejs }}'
+};
+</script>
+{% endif %}
 
+<script>
+// Chart.js Configuration and Data
+document.addEventListener('DOMContentLoaded', function() {
+    {% if chart_data %}
+    const ctx = document.getElementById('voteChart').getContext('2d');
+    
+    // Chart configuration
+    const chartConfig = {
+        type: 'bar',
+        data: {
+            labels: window.chartData.labels,
+            datasets: window.chartData.datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 20,
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                title: {
+                    display: true,
+                    text: window.chartData.title,
+                    font: {
+                        size: 16,
+                        weight: 'bold'
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    stacked: true,
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
+                },
+                y: {
+                    stacked: true,
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0,0,0,0.1)'
+                    },
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            }
+        }
+    };
+    
+    // Create the chart
+    const voteChart = new Chart(ctx, chartConfig);
+    
+    // Update legend counts
+    function updateLegendCounts() {
+        const datasets = window.chartData.datasets;
+        let greenTotal = 0, amberTotal = 0, redTotal = 0;
+        
+        datasets.forEach(dataset => {
+            if (dataset.label === 'Green') {
+                greenTotal = dataset.data.reduce((a, b) => a + b, 0);
+            } else if (dataset.label === 'Amber') {
+                amberTotal = dataset.data.reduce((a, b) => a + b, 0);
+            } else if (dataset.label === 'Red') {
+                redTotal = dataset.data.reduce((a, b) => a + b, 0);
+            }
+        });
+        
+        document.getElementById('greenCount').textContent = greenTotal;
+        document.getElementById('amberCount').textContent = amberTotal;
+        document.getElementById('redCount').textContent = redTotal;
+        document.getElementById('totalVotes').textContent = greenTotal + amberTotal + redTotal;
+        
+        // Calculate health score (percentage of green votes)
+        const totalVotes = greenTotal + amberTotal + redTotal;
+        const healthScore = totalVotes > 0 ? Math.round((greenTotal / totalVotes) * 100) : 0;
+        document.getElementById('healthScore').textContent = healthScore + '%';
+        
+        // Update health score color
+        const healthScoreElement = document.getElementById('healthScore');
+        if (healthScore >= 70) {
+            healthScoreElement.className = 'fw-bold text-success';
+        } else if (healthScore >= 40) {
+            healthScoreElement.className = 'fw-bold text-warning';
+        } else {
+            healthScoreElement.className = 'fw-bold text-danger';
+        }
+    }
+    
+    // Initialize legend counts
+    updateLegendCounts();
+    
+    // Update counts when chart is updated
+    voteChart.options.plugins.tooltip = {
+        callbacks: {
+            afterBody: function(context) {
+                updateLegendCounts();
+            }
+        }
+    };
+    {% endif %}
+    
+    // Auto-submit form when view type changes
+    document.querySelectorAll('input[name="view_type"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            document.getElementById('filterForm').submit();
+        });
+    });
+});
+</script>
+
+<style>
+.btn-check:checked + .btn-outline-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: white;
+}
+
+.chart-container {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+}
+
+.chart-legend {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    height: 100%;
+}
+
+.legend-color {
+    min-width: 20px;
+}
+
+.stats-summary {
+    background: white;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 15px;
+}
+
+.stat-item {
+    font-size: 0.9rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .chart-container {
+        height: 300px !important;
+    }
+    
+    .chart-legend {
+        margin-top: 20px;
+        height: auto;
+    }
+    
+    .btn-group {
+        flex-direction: column;
+    }
+    
+    .btn-group .btn {
+        border-radius: 0.375rem !important;
+        margin-bottom: 5px;
+    }
+}
+
+@media (max-width: 576px) {
+    .display-6 {
+        font-size: 2rem;
+    }
+    
+    .chart-container {
+        height: 250px !important;
+        padding: 10px;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+}
+</style>
 {% endblock %}
