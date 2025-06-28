@@ -4,14 +4,14 @@ A comprehensive Django-based health check system designed for organizations to m
 
 ##  Table of Contents
 
-- [Features](#-features)
-- [User Roles](#-user-roles)
-- [Technology Stack](#-technology-stack)
-- [Installation](#-installation)
-- [Database Setup](#-database-setup)
-- [Usage Guide](#-usage-guide)
-- [Project Structure](#-project-structure)
-- [API Endpoints](#-api-endpoints)
+- [Features](#features)
+- [User Roles](#user-roles)
+- [Technology Stack](#technology-stack)
+- [Installation](#installation)
+- [Database Setup](#database-setup)
+- [Usage Guide](#usage-guide)
+- [Project Structure](#project-structure)
+- [API Endpoints](#api-endpoints)
 
 ##  Features
 
