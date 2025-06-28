@@ -81,76 +81,7 @@
 </div>
 
 <!-- Quick Actions -->
-<div class="row mb-4">
-  <div class="col-12">
-    <div class="card border-0 shadow-sm">
-      <div class="card-header bg-primary text-white">
-        <h5 class="mb-0">
-          <i class="fas fa-bolt me-2"></i>Quick Actions
-        </h5>
-      </div>
-      <div class="card-body">
-        <div class="row g-3">
-          <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12">
-            <a href="/engineer/sessions/" class="text-decoration-none">
-              <div class="card border-0 shadow-sm h-100 quick-action-card">
-                <div class="card-body text-center p-3">
-                  <div class="mb-3">
-                    <i class="fas fa-calendar-alt fa-2x text-primary"></i>
-                  </div>
-                  <h6 class="card-title">Select Sessions</h6>
-                  <p class="card-text small text-muted">Choose and manage your active sessions</p>
-                </div>
-              </div>
-            </a>
-          </div>
-
-          <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12">
-            <a href="/engineers/guidance/" class="text-decoration-none">
-              <div class="card border-0 shadow-sm h-100 quick-action-card">
-                <div class="card-body text-center p-3">
-                  <div class="mb-3">
-                    <i class="fas fa-vote-yea fa-2x text-success"></i>
-                  </div>
-                  <h6 class="card-title">Vote for Team</h6>
-                  <p class="card-text small text-muted">Cast your votes for team health checks</p>
-                </div>
-              </div>
-            </a>
-          </div>
-
-          <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12">
-            <a href="/engineers/team-summary/" class="text-decoration-none">
-              <div class="card border-0 shadow-sm h-100 quick-action-card">
-                <div class="card-body text-center p-3">
-                  <div class="mb-3">
-                    <i class="fas fa-chart-bar fa-2x text-info"></i>
-                  </div>
-                  <h6 class="card-title">View Summary</h6>
-                  <p class="card-text small text-muted">Check team performance summaries</p>
-                </div>
-              </div>
-            </a>
-          </div>
-
-          <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12">
-            <a href="{% url 'engineer_progress_form' %}" class="text-decoration-none">
-              <div class="card border-0 shadow-sm h-100 quick-action-card">
-                <div class="card-body text-center p-3">
-                  <div class="mb-3">
-                    <i class="fas fa-tasks fa-2x text-warning"></i>
-                  </div>
-                  <h6 class="card-title">Update Progress</h6>
-                  <p class="card-text small text-muted">Submit your progress reports</p>
-                </div>
-              </div>
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+{% include 'includes/engineer_quick_actions.html' with exclude_action='dashboard' %}
 
 <!-- Recent Activity & Tips -->
 <div class="row g-3">
@@ -227,16 +158,6 @@
 </div>
 
 <style>
-  .quick-action-card {
-    transition: all 0.3s ease;
-    cursor: pointer;
-  }
-
-  .quick-action-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
-  }
-
   .timeline-item {
     transition: all 0.3s ease;
   }
@@ -309,15 +230,6 @@
       margin-bottom: 0.5rem;
       margin-right: 0 !important;
     }
-  }
-
-  /* Ensure equal height cards */
-  .row.g-3 > [class*="col-"] {
-    display: flex;
-  }
-
-  .row.g-3 > [class*="col-"] > .card {
-    width: 100%;
   }
 </style>
 {% endblock %}

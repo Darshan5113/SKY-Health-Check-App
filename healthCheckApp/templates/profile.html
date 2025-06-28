@@ -2,19 +2,23 @@
 {% load static %}
 
 {% block content %}
-    <div class="profile-container">
-        <div class="profile-avatar" style="text-align: center;">
-            <img src="{% static 'images/Avtar.jpg' %}" alt="Avatar" class="avatar" style="width: 150px; height: 150px; border-radius: 50%;">
-        </div>
 
-        <div class="profile-details" style="text-align: center; margin-top: 20px;">
-            <h3>{{ user.name }}</h3>
-            <p><strong>Email:</strong> {{ user.email }}</p>
-            <p><strong>Role:</strong> {{ user.role }}</p>
-        </div>
+<!-- Quick Actions -->
+{% include 'includes/engineer_quick_actions.html' %}
 
-        <div class="update-profile-btn" style="text-align: center; margin-top: 20px;">
-            <a href="{% url 'update_profile' %}" class="btn btn-primary">Update Profile</a>
-        </div>
+<div class="profile-container">
+    <div class="profile-avatar" style="text-align: center;">
+        <img src="{% static 'images/Avtar.jpg' %}" alt="Avatar" class="avatar" style="width: 150px; height: 150px; border-radius: 50%;">
     </div>
+
+    <div class="profile-details" style="text-align: center; margin-top: 20px;">
+        <h3>{{ user.name }}</h3>
+        <p><strong>Email:</strong> {{ user.email }}</p>
+        <p><strong>Role:</strong> {{ user.role }}</p>
+    </div>
+
+    <div class="update-profile-btn" style="text-align: center; margin-top: 20px;">
+        <a href="{% url 'update_profile' %}" class="btn btn-primary">Update Profile</a>
+    </div>
+</div>
 {% endblock %}

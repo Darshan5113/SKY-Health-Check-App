@@ -1,0 +1,268 @@
+{% load static %}
+<!-- Voting Guidelines Component -->
+<!-- Page Header -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card border-0 shadow-lg" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+      <div class="card-body text-white text-center py-4">
+        <h1 class="display-6 fw-bold mb-3">
+          <i class="fas fa-vote-yea me-3"></i>Voting Guidelines
+        </h1>
+        <p class="lead mb-0">Understand how to cast your votes for team health checks</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Voting Guidelines Cards -->
+<div class="row g-4 mb-4">
+  <!-- Green Vote Card -->
+  <div class="col-lg-4 col-md-6 col-sm-12">
+    <div class="card border-0 shadow-sm h-100 vote-guidance-card" style="border-left: 5px solid #28a745;">
+      <div class="card-body p-4">
+        <div class="d-flex align-items-center mb-3">
+          <div class="vote-icon bg-success rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
+            <img src="{% static 'images/Green_Vote.png' %}" alt="Green" width="30" height="30">
+          </div>
+          <h5 class="card-title mb-0 text-success fw-bold">Green Vote</h5>
+        </div>
+        <div class="vote-description">
+          <p class="text-muted mb-3">
+            <strong>When to select:</strong> Team is performing strongly in this area.
+          </p>
+          <ul class="list-unstyled">
+            <li class="mb-2">
+              <i class="fas fa-check-circle text-success me-2"></i>
+              Everything functioning as expected
+            </li>
+            <li class="mb-2">
+              <i class="fas fa-check-circle text-success me-2"></i>
+              No blockers, issues, or risks
+            </li>
+            <li class="mb-2">
+              <i class="fas fa-check-circle text-success me-2"></i>
+              Team confident in processes
+            </li>
+            <li class="mb-2">
+              <i class="fas fa-check-circle text-success me-2"></i>
+              Work on track, stakeholders informed
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Amber Vote Card -->
+  <div class="col-lg-4 col-md-6 col-sm-12">
+    <div class="card border-0 shadow-sm h-100 vote-guidance-card" style="border-left: 5px solid #ffc107;">
+      <div class="card-body p-4">
+        <div class="d-flex align-items-center mb-3">
+          <div class="vote-icon bg-warning rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
+            <img src="{% static 'images/Yellow_vote.png' %}" alt="Amber" width="30" height="30">
+          </div>
+          <h5 class="card-title mb-0 text-warning fw-bold">Amber Vote</h5>
+        </div>
+        <div class="vote-description">
+          <p class="text-muted mb-3">
+            <strong>When to select:</strong> Some concerns or areas for improvement.
+          </p>
+          <ul class="list-unstyled">
+            <li class="mb-2">
+              <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+              Minor issues or blockers present
+            </li>
+            <li class="mb-2">
+              <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+              Support or corrective action needed
+            </li>
+            <li class="mb-2">
+              <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+              Team aware and working on improvements
+            </li>
+            <li class="mb-2">
+              <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+              Warning sign, not failure
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Red Vote Card -->
+  <div class="col-lg-4 col-md-6 col-sm-12">
+    <div class="card border-0 shadow-sm h-100 vote-guidance-card" style="border-left: 5px solid #dc3545;">
+      <div class="card-body p-4">
+        <div class="d-flex align-items-center mb-3">
+          <div class="vote-icon bg-danger rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
+            <img src="{% static 'images/Red_Vote.png' %}" alt="Red" width="30" height="30">
+          </div>
+          <h5 class="card-title mb-0 text-danger fw-bold">Red Vote</h5>
+        </div>
+        <div class="vote-description">
+          <p class="text-muted mb-3">
+            <strong>When to select:</strong> Critical situation requiring immediate attention.
+          </p>
+          <ul class="list-unstyled">
+            <li class="mb-2">
+              <i class="fas fa-times-circle text-danger me-2"></i>
+              Serious challenges or stalled progress
+            </li>
+            <li class="mb-2">
+              <i class="fas fa-times-circle text-danger me-2"></i>
+              Major blockers or unresolved issues
+            </li>
+            <li class="mb-2">
+              <i class="fas fa-times-circle text-danger me-2"></i>
+              Failure in communication/execution
+            </li>
+            <li class="mb-2">
+              <i class="fas fa-times-circle text-danger me-2"></i>
+              Urgent support or intervention needed
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Progress Notes Section -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-info text-white">
+        <h5 class="mb-0">
+          <i class="fas fa-chart-line me-2"></i>Progress Notes
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <div class="progress-note-item text-center p-3 bg-light rounded">
+              <div class="progress-icon bg-success rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                <i class="fas fa-arrow-up text-white fa-2x"></i>
+              </div>
+              <h6 class="fw-bold text-success mb-2">Up Trend</h6>
+              <p class="text-muted small mb-0">Situation is improving</p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="progress-note-item text-center p-3 bg-light rounded">
+              <div class="progress-icon bg-danger rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                <i class="fas fa-arrow-down text-white fa-2x"></i>
+              </div>
+              <h6 class="fw-bold text-danger mb-2">Down Trend</h6>
+              <p class="text-muted small mb-0">Situation is getting worse</p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="progress-note-item text-center p-3 bg-light rounded">
+              <div class="progress-icon bg-secondary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                <i class="fas fa-minus text-white fa-2x"></i>
+              </div>
+              <h6 class="fw-bold text-secondary mb-2">No Change</h6>
+              <p class="text-muted small mb-0">Status unchanged since last session</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Action Button -->
+<div class="row">
+  <div class="col-12 text-center">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body py-4">
+        <h5 class="mb-3">Ready to cast your vote?</h5>
+        <a href="{% url vote_url %}" class="btn btn-primary btn-lg px-5">
+          <i class="fas fa-vote-yea me-2"></i>I Understand - Proceed to Vote
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .vote-guidance-card {
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+
+  .vote-guidance-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
+  }
+
+  .vote-icon {
+    transition: all 0.3s ease;
+  }
+
+  .vote-guidance-card:hover .vote-icon {
+    transform: scale(1.1);
+  }
+
+  .progress-note-item {
+    transition: all 0.3s ease;
+  }
+
+  .progress-note-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  }
+
+  .progress-icon {
+    transition: all 0.3s ease;
+  }
+
+  .progress-note-item:hover .progress-icon {
+    transform: scale(1.1);
+  }
+
+  .card {
+    transition: all 0.3s ease;
+  }
+
+  .card:hover {
+    transform: translateY(-2px);
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .display-6 {
+      font-size: 1.75rem;
+    }
+    
+    .card-body {
+      padding: 1rem;
+    }
+
+    .vote-guidance-card {
+      margin-bottom: 1rem;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .display-6 {
+      font-size: 1.5rem;
+    }
+    
+    .btn-lg {
+      font-size: 1rem;
+      padding: 0.75rem 1.5rem;
+    }
+
+    .vote-icon {
+      width: 40px !important;
+      height: 40px !important;
+    }
+
+    .progress-icon {
+      width: 50px !important;
+      height: 50px !important;
+    }
+  }
+</style> 

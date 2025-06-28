@@ -1,6 +1,9 @@
 {% extends 'engineer_base.html' %}
 {% block content %}
 
+<!-- Quick Actions -->
+{% include 'includes/engineer_quick_actions.html' with exclude_action='summary' %}
+
 <div class="text-center mt-4">
 
   {% if messages %}

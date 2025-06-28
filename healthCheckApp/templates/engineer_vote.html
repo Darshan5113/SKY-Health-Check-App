@@ -1,92 +1,200 @@
 {% extends 'engineer_base.html' %}
+{% load static %}
 {% block title %}Submit Vote{% endblock %}
 
 {% block content %}
-
-
-<div class="container">
-  {% if messages %}
-  <div style="margin-bottom: 20px;">
-      {% for message in messages %}
-          <div class="alert 
-              {% if message.tags == 'success' %}alert-success
-              {% elif message.tags == 'error' %}alert-danger
-              {% else %}alert-info{% endif %}"
-              style="padding: 10px; border-radius: 5px; margin-bottom: 10px; border: 1px solid #ccc;">
-              {{ message }}
-          </div>
-      {% endfor %}
-  </div>
-{% endif %}
-
-
-  <h2 class="mb-4">Cast Your Vote</h2>
-
-
-  {% if existing_vote %}
-    <div class="alert alert-info">
-      You have already voted on this Health Card in this session. You can update your vote below.
+<div class="container mt-4">
+  <!-- Page Header -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card border-0 shadow-lg" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div class="card-body text-white text-center py-4">
+          <h1 class="display-6 fw-bold mb-3">
+            <i class="fas fa-vote-yea me-3"></i>Cast Your Vote
+          </h1>
+          <p class="lead mb-0">Submit your health check assessment for your team</p>
+        </div>
+      </div>
     </div>
+  </div>
+
+  <!-- Messages Section -->
+  {% if messages %}
+  <div class="row mb-4">
+    <div class="col-12">
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+          <i class="fas 
+            {% if message.tags == 'success' %}fa-check-circle text-success
+            {% elif message.tags == 'error' %}fa-exclamation-triangle text-danger
+            {% else %}fa-info-circle text-info{% endif %} me-2"></i>
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
   {% endif %}
 
-  <form method="post">
-    {% csrf_token %}
-    <div class="mb-3">
-      <label for="team" class="form-label">Select Team</label>
-      <select name="team" id="team" class="form-select" required>
-        <option value="" disabled {% if not existing_vote %}selected{% endif %}>-- Choose Team --</option>
-        {% for team in teams %}
-          <option value="{{ team.team_id }}" {% if existing_vote and existing_vote.team.team_id == team.team_id %}selected{% endif %}>
-            {{ team.name }}
-          </option>
-        {% endfor %}
-      </select>
-    </div>
-
-    <div class="mb-3">
-      <label for="card" class="form-label">Select Health Card</label>
-      <select name="card" id="card" class="form-select" required>
-        <option value="" disabled {% if not existing_vote %}selected{% endif %}>-- Choose Health Card --</option>
-        {% for card in cards %}
-          <option value="{{ card.card_id }}" {% if existing_vote and existing_vote.card.card_id == card.card_id %}selected{% endif %}>
-            {{ card.title }}
-          </option>
-        {% endfor %}
-      </select>
-    </div>
-
-    <div class="mb-3">
-      <label class="form-label">Vote</label><br>
-      <div class="form-check form-check-inline">
-        <input class="form-check-input" type="radio" name="vote_value" value="1" required
-          {% if existing_vote and existing_vote.vote_value == 1 %}checked{% endif %}>
-        <label class="form-check-label">🟢 Green</label>
-      </div>
-      <div class="form-check form-check-inline">
-        <input class="form-check-input" type="radio" name="vote_value" value="2"
-          {% if existing_vote and existing_vote.vote_value == 2 %}checked{% endif %}>
-        <label class="form-check-label">🟡 Amber</label>
-      </div>
-      <div class="form-check form-check-inline">
-        <input class="form-check-input" type="radio" name="vote_value" value="3"
-          {% if existing_vote and existing_vote.vote_value == 3 %}checked{% endif %}>
-        <label class="form-check-label">🔴 Red</label>
+  <!-- Existing Vote Alert -->
+  {% if existing_vote %}
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="alert alert-info alert-dismissible fade show shadow-sm" role="alert">
+        <i class="fas fa-info-circle me-2"></i>
+        <strong>Vote Update:</strong> You have already voted on this Health Card in this session. You can update your vote below.
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
       </div>
     </div>
+  </div>
+  {% endif %}
 
-    <div class="mb-3">
-      <label for="progress_note" class="form-label">Progress Note</label>
-      <select name="progress_note" id="progress_note" class="form-select" required>
-        <option value="" disabled {% if not existing_vote %}selected{% endif %}>-- Choose Progress --</option>
-        <option value="Up trend" {% if existing_vote and existing_vote.progress_note == "Up trend" %}selected{% endif %}>Up trend</option>
-        <option value="Down trend" {% if existing_vote and existing_vote.progress_note == "Down trend" %}selected{% endif %}>Down trend</option>
-        <option value="No change" {% if existing_vote and existing_vote.progress_note == "No change" %}selected{% endif %}>No change</option>
-      </select>
-    </div>
-
-    <button type="submit" class="btn btn-success">
-      {% if existing_vote %}Update Vote{% else %}Submit Vote{% endif %}
-    </button>
-  </form>
+  <!-- Voting Form -->
+  {% with back_url='engineers-dashboard' %}
+    {% include 'includes/vote_form.html' %}
+  {% endwith %}
 </div>
+
+<style>
+  .vote-option {
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: 2px solid transparent;
+  }
+
+  .vote-option:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
+  }
+
+  .vote-option.vote-green:hover {
+    border-color: #28a745;
+    background-color: rgba(40, 167, 69, 0.05);
+  }
+
+  .vote-option.vote-amber:hover {
+    border-color: #ffc107;
+    background-color: rgba(255, 193, 7, 0.05);
+  }
+
+  .vote-option.vote-red:hover {
+    border-color: #dc3545;
+    background-color: rgba(220, 53, 69, 0.05);
+  }
+
+  .vote-option input[type="radio"]:checked + .card-body {
+    background-color: rgba(13, 110, 253, 0.1);
+    border-color: #0d6efd;
+  }
+
+  .form-select, .form-control {
+    border-radius: 10px;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+  }
+
+  .form-select:focus, .form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+  }
+
+  .btn {
+    border-radius: 10px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+
+  .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+  }
+
+  .card {
+    border-radius: 15px;
+    overflow: hidden;
+  }
+
+  .alert {
+    border-radius: 10px;
+    border: none;
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .display-6 {
+      font-size: 2rem;
+    }
+    
+    .btn-lg {
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+    }
+    
+    .form-select-lg {
+      padding: 0.75rem 1rem;
+      font-size: 1rem;
+    }
+    
+    .vote-option {
+      margin-bottom: 1rem;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .container {
+      padding: 0 15px;
+    }
+    
+    .card-body {
+      padding: 1.5rem;
+    }
+    
+    .d-md-flex {
+      flex-direction: column;
+    }
+    
+    .btn {
+      width: 100%;
+      margin-bottom: 0.5rem;
+    }
+  }
+</style>
+
+<script>
+  // Enhanced form validation and vote option selection
+  document.addEventListener('DOMContentLoaded', function() {
+    // Vote option selection enhancement
+    const voteOptions = document.querySelectorAll('.vote-option');
+    const radioButtons = document.querySelectorAll('input[name="vote_value"]');
+    
+    voteOptions.forEach(option => {
+      option.addEventListener('click', function() {
+        const radio = this.querySelector('input[type="radio"]');
+        radio.checked = true;
+        
+        // Remove active class from all options
+        voteOptions.forEach(opt => opt.classList.remove('active'));
+        // Add active class to selected option
+        this.classList.add('active');
+      });
+    });
+    
+    // Set initial active state
+    radioButtons.forEach(radio => {
+      if (radio.checked) {
+        radio.closest('.vote-option').classList.add('active');
+      }
+    });
+    
+    // Form validation
+    const form = document.querySelector('.needs-validation');
+    form.addEventListener('submit', function(event) {
+      if (!form.checkValidity()) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      form.classList.add('was-validated');
+    });
+  });
+</script>
 {% endblock %}

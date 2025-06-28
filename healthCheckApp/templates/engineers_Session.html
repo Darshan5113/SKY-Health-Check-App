@@ -1,86 +1,225 @@
 {% extends 'engineer_base.html' %}
- {% block title %}Manage Sessions{% endblock%} {% block content %}
-<h2>Manage Sessions</h2>
-{% if messages %}
-    <div style="margin-bottom: 20px;">
-        {% for message in messages %}
-            <div class="alert 
-                {% if message.tags == 'success' %}alert-success
-                {% elif message.tags == 'error' %}alert-danger
-                {% else %}alert-info{% endif %}"
-                style="padding: 10px; border-radius: 5px; margin-bottom: 10px; border: 1px solid #ccc;">
-                {{ message }}
-            </div>
-        {% endfor %}
-    </div>
-{% endif %}
+{% block title %}Manage Sessions{% endblock%} 
+{% block content %}
 
-<!-- Active Session -->
-<div class="mt-4">
-  <h4>Active Session</h4>
-  {% if active_session %}
-  <div class="card shadow mb-3">
-    <div class="card-body">
-      <p class="card-text">Date: {{ active_session.date }}</p>
-      <p class="card-text">Created At: {{ active_session.created_at }}</p>
-      <form method="post" action="{% url 'engineer-deactivate-session' %}">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-warning">Deactivate</button>
-      </form>
-    </div>
-  </div>
-  {% else %}
-  <p class="text-muted">No active session selected.</p>
-  {% endif %}
-</div>
-
-<!-- Sessions List -->
-<!-- All Sessions -->
-<div class="mt-4">
-  <h3>Sessions List</h3>
-  <div class="row" id="userList">
-    {% for session in sessions %}
-    <div class="col-md-4 mb-4">
-      <div class="card shadow">
-        <div class="card-body">
-          <h5 class="card-title">Session {{ forloop.counter }}</h5>
-          <p class="card-text">Date: {{ session.date }}</p>
-          <p class="card-text">Created At: {{ session.created_at }}</p>
-
-          {% if session.is_expired %}
-          <button class="btn btn-secondary btn-sm" disabled>
-            Session Expired
-          </button>
-
-          {% elif active_session and session.session_id == active_session.session_id %}
-          <p class="text-success fw-bold">✅ Already Active</p>
-
-          
-          <form method="post" action="{% url 'engineer-deactivate-session' %}">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-warning btn-sm">
-              Deactivate
-            </button>
-          </form>
-
-          {% else %}
-          <form
-            method="post"
-            action="{% url 'engineer-select-session' session.session_id %}"
-          >
-            {% csrf_token %}
-            <button type="submit" class="btn btn-success btn-sm">
-              Select Session
-            </button>
-          </form>
-          {% endif %}
-        </div>
+<!-- Page Header -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card border-0 shadow-lg" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+      <div class="card-body text-white text-center py-4">
+        <h1 class="display-6 fw-bold mb-3">
+          <i class="fas fa-calendar-alt me-3"></i>Manage Sessions
+        </h1>
+        <p class="lead mb-0">Select and manage your active health check sessions</p>
       </div>
     </div>
-    {% empty %}
-    <p class="text-muted">No session found.</p>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+{% include 'includes/engineer_quick_actions.html' with exclude_action='sessions' %}
+
+<!-- Messages -->
+{% if messages %}
+<div class="row mb-4">
+  <div class="col-12">
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+        <i class="fas fa-{% if message.tags == 'success' %}check-circle text-success{% elif message.tags == 'error' %}exclamation-triangle text-danger{% else %}info-circle text-info{% endif %} me-2"></i>
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
     {% endfor %}
   </div>
 </div>
+{% endif %}
+
+<!-- Active Session Section -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-success text-white">
+        <h5 class="mb-0">
+          <i class="fas fa-play-circle me-2"></i>Active Session
+        </h5>
+      </div>
+      <div class="card-body">
+        {% if active_session %}
+        <div class="row align-items-center">
+          <div class="col-md-8">
+            <div class="d-flex align-items-center mb-3">
+              <div class="bg-success rounded-circle p-2 me-3">
+                <i class="fas fa-calendar-check text-white"></i>
+              </div>
+              <div>
+                <h6 class="mb-1 fw-bold text-success">Session Active</h6>
+                <p class="mb-0 text-muted">Date: {{ active_session.date }}</p>
+                <small class="text-muted">Created: {{ active_session.created_at|date:"M d, Y H:i" }}</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 text-md-end">
+            <form method="post" action="{% url 'engineer-deactivate-session' %}" class="d-inline">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-outline-warning">
+                <i class="fas fa-stop-circle me-2"></i>Deactivate Session
+              </button>
+            </form>
+          </div>
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+          <div class="bg-light rounded-circle d-inline-flex p-3 mb-3">
+            <i class="fas fa-calendar-times fa-2x text-muted"></i>
+          </div>
+          <h6 class="text-muted mb-2">No Active Session</h6>
+          <p class="text-muted small mb-0">Select a session from the list below to get started</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Sessions List Section -->
+<div class="row">
+  <div class="col-12">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">
+          <i class="fas fa-list me-2"></i>Available Sessions
+        </h5>
+      </div>
+      <div class="card-body">
+        {% if sessions %}
+        <div class="row g-4">
+          {% for session in sessions %}
+          <div class="col-xl-4 col-lg-6 col-md-6 col-sm-12">
+            <div class="card border-0 shadow-sm h-100 session-card">
+              <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                  <div class="session-number bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                    <span class="fw-bold">{{ forloop.counter }}</span>
+                  </div>
+                  {% if session.is_expired %}
+                    <span class="badge bg-secondary">Expired</span>
+                  {% elif active_session and session.session_id == active_session.session_id %}
+                    <span class="badge bg-success">Active</span>
+                  {% else %}
+                    <span class="badge bg-light text-dark">Available</span>
+                  {% endif %}
+                </div>
+
+                <h6 class="card-title fw-bold mb-3">Session {{ forloop.counter }}</h6>
+                
+                <div class="session-details mb-4">
+                  <div class="d-flex align-items-center mb-2">
+                    <i class="fas fa-calendar text-primary me-2"></i>
+                    <span class="text-muted">{{ session.date }}</span>
+                  </div>
+                  <div class="d-flex align-items-center">
+                    <i class="fas fa-clock text-primary me-2"></i>
+                    <span class="text-muted">{{ session.created_at|date:"M d, Y H:i" }}</span>
+                  </div>
+                </div>
+
+                <div class="session-actions">
+                  {% if session.is_expired %}
+                    <button class="btn btn-secondary w-100" disabled>
+                      <i class="fas fa-ban me-2"></i>Session Expired
+                    </button>
+                  {% elif active_session and session.session_id == active_session.session_id %}
+                    <div class="text-center mb-2">
+                      <span class="text-success fw-bold">
+                        <i class="fas fa-check-circle me-2"></i>Currently Active
+                      </span>
+                    </div>
+                    <form method="post" action="{% url 'engineer-deactivate-session' %}">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-outline-warning w-100">
+                        <i class="fas fa-stop-circle me-2"></i>Deactivate
+                      </button>
+                    </form>
+                  {% else %}
+                    <form method="post" action="{% url 'engineer-select-session' session.session_id %}">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-success w-100">
+                        <i class="fas fa-play-circle me-2"></i>Select Session
+                      </button>
+                    </form>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+          <div class="bg-light rounded-circle d-inline-flex p-4 mb-3">
+            <i class="fas fa-calendar-times fa-3x text-muted"></i>
+          </div>
+          <h5 class="text-muted mb-2">No Sessions Available</h5>
+          <p class="text-muted mb-0">There are no sessions created yet. Please contact your administrator.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .session-card {
+    transition: all 0.3s ease;
+    border: 1px solid #e9ecef;
+  }
+
+  .session-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
+    border-color: #667eea;
+  }
+
+  .session-number {
+    font-size: 0.9rem;
+  }
+
+  .session-details {
+    font-size: 0.9rem;
+  }
+
+  .session-actions {
+    margin-top: auto;
+  }
+
+  .card {
+    transition: all 0.3s ease;
+  }
+
+  .card:hover {
+    transform: translateY(-2px);
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .display-6 {
+      font-size: 1.75rem;
+    }
+    
+    .card-body {
+      padding: 1rem;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .display-6 {
+      font-size: 1.5rem;
+    }
+    
+    .btn {
+      font-size: 0.9rem;
+    }
+  }
+</style>
 
 {% endblock %}

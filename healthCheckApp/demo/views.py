@@ -1,8 +1,14 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse
 from .models import Team, User, Department, HealthCard, Session
 from django.utils import timezone
 from datetime import datetime
+from django.contrib import messages
+from django.views.decorators.csrf import csrf_protect
+import logging
+
+# Configure logger for error tracking
+logger = logging.getLogger(__name__)
 
 # Create your views here.
 def register(request):
@@ -263,7 +269,7 @@ def engineer_login(request):
                         # Set session variables for authenticated engineer
                         request.session['user_id'] = user.user_id
                         request.session['role'] = user.role
-                        return render(request, 'engineer_dashboard.html')
+                        return redirect('engineers-dashboard')
                     else:
                         # User exists but has wrong role
                         return render(request, 'engineer_login.html', {'error': 'Access denied: This account is not for engineers'})
@@ -848,12 +854,17 @@ def engineers_dashboard(request):
     
     Fetches statistics and recent activities for the logged-in engineer.
     """
+    print(f"1")
     try:
         # Get user from session
-        user_id = request.session.get('user_id')
-        if not user_id:
+        print(f"2")
+        user_id = request.session['user_id']
+        print(f"User ID: {user_id}")
+        print(f"Role: {request.session['role']}")
+        if not check_session(request):
             return redirect('engineer-login')
         
+        print(f"3")
         user = User.objects.get(user_id=user_id)
         
         # Get total number of sessions
@@ -965,6 +976,8 @@ def engineers_dashboard(request):
             'recent_activities': recent_activities[:4],  # Show only 4 most recent activities
             'active_session': active_session,
         }
+
+        print(context)
         
         return render(request, 'engineer_dashboard.html', context)
         
@@ -990,57 +1003,130 @@ from .models import Session
 from django.views.decorators.csrf import csrf_protect
 @csrf_protect
 def engineer_manage_sessions(request):
-    sessions = Session.objects.all().order_by('-created_at')
-    active_session_id = request.session.get('engineer_active_session_id')
-    active_session = None
+    """
+    Display and manage health check sessions for engineers.
+    
+    This view shows all available sessions and the currently active session.
+    It handles session expiration checks and provides session management interface.
+    
+    Args:
+        request: HTTP request object
+        
+    Returns:
+        Rendered template with sessions data
+    """
+    # Fetch all sessions ordered by creation date (newest first)
+    all_available_sessions = Session.objects.all().order_by('-created_at')
+    
+    # Get the currently active session ID from user's session
+    current_active_session_id = request.session.get('engineer_active_session_id')
+    current_active_session = None
 
-    if active_session_id:
+    # Check if there's an active session and validate it
+    if current_active_session_id:
         try:
-            active_session = Session.objects.get(session_id=active_session_id)
-            # Check if active session is expired
-            if active_session.date < timezone.now():
-                # Expired, so deactivate it
+            # Retrieve the active session from database
+            current_active_session = Session.objects.get(session_id=current_active_session_id)
+            
+            # Check if the active session has expired
+            current_time = timezone.now()
+            if current_active_session.date < current_time:
+                # Session has expired, remove it from user's session
                 request.session.pop('engineer_active_session_id', None)
-                active_session = None
+                messages.warning(request, "Your active session has expired and has been deactivated.")
+                current_active_session = None
+                
         except Session.DoesNotExist:
+            # Active session no longer exists in database, clean up session
             request.session.pop('engineer_active_session_id', None)
+            messages.error(request, "The active session was not found and has been deactivated.")
+            current_active_session = None
 
+    # Add expiration status to each session for template display
+    for session in all_available_sessions:
+        session.is_expired = session.date < timezone.now()
 
     return render(request, 'engineers_Session.html', {
-        'sessions': sessions,
-        'active_session': active_session,
+        'sessions': all_available_sessions,
+        'active_session': current_active_session,
     })
 
 @csrf_protect
 def engineer_select_session(request, session_id):
+    """
+    Activate a specific health check session for an engineer.
+    
+    This view handles session activation, validates session existence and expiration,
+    and provides appropriate feedback to the user.
+    
+    Args:
+        request: HTTP request object
+        session_id: ID of the session to activate
+        
+    Returns:
+        Redirect to session management page with success/error message
+    """
     if request.method == 'POST':
-        session = get_object_or_404(Session, session_id=session_id)
-
-        if session.is_expired():
-            messages.error(request, "This session has expired and cannot be activated.")
-        else:
-            request.session['engineer_active_session_id'] = session.session_id
-            messages.success(request, f"Session {session.date} activated.")
-
-        request.session['engineer_active_session_id'] = session.session_id
-        # messages.success(request, f"Session {session.date} activated.")
+        try:
+            # Retrieve the session to be activated
+            session_to_activate = get_object_or_404(Session, session_id=session_id)
+            
+            # Check if the session has expired
+            if session_to_activate.is_expired():
+                messages.error(request, f"Session {session_to_activate.date} has expired and cannot be activated.")
+            else:
+                # Activate the session by storing its ID in user's session
+                request.session['engineer_active_session_id'] = session_to_activate.session_id
+                messages.success(request, f"Session {session_to_activate.date} has been successfully activated.")
+                
+        except Session.DoesNotExist:
+            messages.error(request, "The requested session was not found.")
+        except Exception as e:
+            # Handle any unexpected errors during session activation
+            messages.error(request, f"An error occurred while activating the session: {str(e)}")
+            logger.error(f"Error activating session {session_id}: {str(e)}")
+    
     return redirect('engineer-manage-sessions')
-
 
 @csrf_protect
 def engineer_deactivate_session(request):
+    """
+    Deactivate the currently active health check session for an engineer.
+    
+    This view removes the active session from the user's session storage
+    and provides confirmation feedback.
+    
+    Args:
+        request: HTTP request object
+        
+    Returns:
+        Redirect to session management page with success message
+    """
     if request.method == 'POST':
-        request.session.pop('engineer_active_session_id', None)
-        messages.success(request, "Active session deactivated.")
+        try:
+            # Get the current active session ID before removing it
+            current_active_session_id = request.session.get('engineer_active_session_id')
+            
+            # Remove the active session from user's session
+            request.session.pop('engineer_active_session_id', None)
+            
+            if current_active_session_id:
+                messages.success(request, "Your active session has been successfully deactivated.")
+            else:
+                messages.info(request, "No active session was found to deactivate.")
+                
+        except Exception as e:
+            # Handle any unexpected errors during session deactivation
+            messages.error(request, f"An error occurred while deactivating the session: {str(e)}")
+            logger.error(f"Error deactivating session: {str(e)}")
+    
     return redirect('engineer-manage-sessions')
-
-from django.shortcuts import render, redirect
-from .models import Session, Team, HealthCard, Vote, User  # Using your custom User model
-from django.contrib.auth.decorators import login_required
 
 # @login_required
 def voting_guidance(request):
-    return render(request, 'engineer_voting_guidance.html')
+    return render(request, 'engineer_voting_guidance.html', {
+        'vote_url': 'vote-page'
+    })
 
 from django.shortcuts import render, redirect
 from .models import Session, Team, HealthCard, Vote, User
@@ -1050,86 +1136,205 @@ from django.utils import timezone
 @csrf_protect
 
 def vote_page(request):
-    teams = Team.objects.all()
-    cards = HealthCard.objects.all()
-    active_session_id = request.session.get('engineer_active_session_id')
-    user_id = request.session.get('user_id')
+    """
+    Handle engineer voting functionality for health check assessments.
+    
+    This function processes vote submissions from engineers, including:
+    - Form validation and data sanitization
+    - Duplicate vote detection and updates
+    - New vote creation
+    - Session and user authentication checks
+    
+    Args:
+        request: HTTP request object containing form data and session info
+        
+    Returns:
+        Rendered template with success/error messages and form data
+        
+    Raises:
+        Http404: If user or session not found in database
+    """
+    # ========================================
+    # INITIAL DATA FETCHING AND VALIDATION
+    # ========================================
+    # Fetch all available teams and health cards for form dropdowns
+    available_teams = Team.objects.all()
+    available_health_cards = HealthCard.objects.all()
+    
+    # Get active session and user info from session storage
+    current_active_session_id = request.session.get('engineer_active_session_id')
+    current_user_id = request.session.get('user_id')
 
-    if not user_id:
-        messages.error(request, "You must be logged in.")
+    # ========================================
+    # AUTHENTICATION AND SESSION VALIDATION
+    # ========================================
+    # Check if user is logged in
+    if not current_user_id:
+        messages.error(request, "You must be logged in to submit votes.")
         return redirect('engineer-login')
 
-    if not active_session_id:
-        messages.error(request, "Please activate a session before voting.")
+    # Check if user has an active session for voting
+    if not current_active_session_id:
+        messages.error(request, "Please activate a session before submitting votes.")
         return redirect('engineer-manage-sessions')
 
-    user = get_object_or_404(User, user_id=user_id)
-    session = get_object_or_404(Session, session_id=active_session_id)
+    # Fetch user and session objects from database
+    try:
+        current_user = get_object_or_404(User, user_id=current_user_id)
+        current_session = get_object_or_404(Session, session_id=current_active_session_id)
+    except Http404 as e:
+        messages.error(request, "Invalid session or user data. Please log in again.")
+        return redirect('engineer-login')
 
+    # ========================================
+    # FORM PROCESSING (POST REQUEST HANDLING)
+    # ========================================
     if request.method == 'POST':
-        team_id = request.POST.get('team')
-        card_id = request.POST.get('card')
-        vote_value = request.POST.get('vote_value')
-        progress_note = request.POST.get('progress_note', '')
+        try:
+            # Extract and sanitize form data
+            selected_team_id = request.POST.get('team')
+            selected_health_card_id = request.POST.get('card')
+            selected_vote_value = request.POST.get('vote_value')
+            selected_progress_trend = request.POST.get('progress_note', '').strip()
 
-        # Validate form input
-        if not team_id or not card_id or not vote_value:
-            messages.error(request, "All fields are required.")
+            # ========================================
+            # FORM VALIDATION
+            # ========================================
+            # Check if all required fields are provided
+            if not all([selected_team_id, selected_health_card_id, selected_vote_value]):
+                messages.error(request, "All fields are required. Please fill in team, health card, and vote selection.")
+                return render(request, 'engineer_vote.html', {
+                    'teams': available_teams,
+                    'cards': available_health_cards,
+                    'user': current_user,
+                    'session': current_session,
+                })
+
+            # Validate vote value is within acceptable range (1-3)
+            try:
+                vote_value_integer = int(selected_vote_value)
+                if vote_value_integer not in [1, 2, 3]:
+                    raise ValueError("Invalid vote value")
+            except (ValueError, TypeError):
+                messages.error(request, "Invalid vote selection. Please choose Green, Amber, or Red.")
+                return render(request, 'engineer_vote.html', {
+                    'teams': available_teams,
+                    'cards': available_health_cards,
+                    'user': current_user,
+                    'session': current_session,
+                })
+
+            # Validate progress trend is one of the allowed values
+            allowed_progress_trends = ['Up trend', 'Down trend', 'No change']
+            if selected_progress_trend not in allowed_progress_trends:
+                messages.error(request, "Invalid progress trend selection.")
+                return render(request, 'engineer_vote.html', {
+                    'teams': available_teams,
+                    'cards': available_health_cards,
+                    'user': current_user,
+                    'session': current_session,
+                })
+
+            # ========================================
+            # DATABASE OBJECT FETCHING
+            # ========================================
+            # Fetch team and health card objects from database
+            try:
+                selected_team = get_object_or_404(Team, pk=selected_team_id)
+                selected_health_card = get_object_or_404(HealthCard, pk=selected_health_card_id)
+            except Http404:
+                messages.error(request, "Selected team or health card not found. Please try again.")
+                return render(request, 'engineer_vote.html', {
+                    'teams': available_teams,
+                    'cards': available_health_cards,
+                    'user': current_user,
+                    'session': current_session,
+                })
+
+            # ========================================
+            # DUPLICATE VOTE DETECTION AND HANDLING
+            # ========================================
+            # Check if user has already voted for this combination
+            existing_vote_record = Vote.objects.filter(
+                user=current_user,
+                session=current_session,
+                team=selected_team,
+                card=selected_health_card
+            ).first()
+
+            if existing_vote_record:
+                # ========================================
+                # UPDATE EXISTING VOTE
+                # ========================================
+                try:
+                    existing_vote_record.vote_value = vote_value_integer
+                    existing_vote_record.progress_note = selected_progress_trend
+                    existing_vote_record.save()
+                    
+                    messages.success(request, f"Your vote for {selected_health_card.title} has been updated successfully.")
+                    
+                except Exception as vote_update_error:
+                    # Log the error for debugging (in production, use proper logging)
+                    print(f"Error updating vote: {vote_update_error}")
+                    messages.error(request, "Failed to update your vote. Please try again.")
+                    
+            else:
+                # ========================================
+                # CREATE NEW VOTE RECORD
+                # ========================================
+                try:
+                    Vote.objects.create(
+                        user=current_user,
+                        session=current_session,
+                        team=selected_team,
+                        card=selected_health_card,
+                        vote_value=vote_value_integer,
+                        progress_note=selected_progress_trend,
+                        created_at=timezone.now()
+                    )
+                    
+                    messages.success(request, f"Your vote for {selected_health_card.title} has been submitted successfully.")
+                    
+                except Exception as vote_creation_error:
+                    # Log the error for debugging (in production, use proper logging)
+                    print(f"Error creating vote: {vote_creation_error}")
+                    messages.error(request, "Failed to submit your vote. Please try again.")
+
+            # ========================================
+            # SUCCESS RESPONSE
+            # ========================================
+            # Return the form with success message and current data
             return render(request, 'engineer_vote.html', {
-                'teams': teams,
-                'cards': cards,
-                'error': 'All fields are required.',
-                'user': user,
-                'session': session,
+                'teams': available_teams,
+                'cards': available_health_cards,
+                'user': current_user,
+                'session': current_session,
             })
 
-        team = get_object_or_404(Team, pk=team_id)
-        card = get_object_or_404(HealthCard, pk=card_id)
-
-        existing_vote = Vote.objects.filter(
-            user=user,
-            session=session,
-            team=team,
-            card=card
-        ).first()
-
-        if existing_vote:
-            existing_vote.vote_value = int(vote_value)
-            existing_vote.progress_note = progress_note
-            existing_vote.save()
-            messages.success(request, "Your vote has been updated.")
+        except Exception as form_processing_error:
+            # ========================================
+            # GENERAL ERROR HANDLING
+            # ========================================
+            # Log the error for debugging (in production, use proper logging)
+            print(f"Unexpected error in vote processing: {form_processing_error}")
+            messages.error(request, "An unexpected error occurred. Please try again.")
+            
             return render(request, 'engineer_vote.html', {
-                'teams': teams,
-                'cards': cards,
-                'success': '{Vote.vote_id} Your vote has been updated.',
-                'user': user,
-                'session': session,
-            })
-        else:
-            Vote.objects.create(
-                user=user,
-                session=session,
-                team=team,
-                card=card,
-                vote_value=int(vote_value),
-                progress_note=progress_note,
-                created_at=timezone.now()
-            )
-            messages.success(request, "Your vote has been submitted.")
-
-            return render(request, 'engineer_vote.html', {
-                'teams': teams,
-                'cards': cards,
-                'success': 'Your vote has been submitted.',
-                'user': user,
-                'session': session,
+                'teams': available_teams,
+                'cards': available_health_cards,
+                'user': current_user,
+                'session': current_session,
             })
 
+    # ========================================
+    # GET REQUEST HANDLING (FORM DISPLAY)
+    # ========================================
+    # Display the voting form for GET requests
     return render(request, 'engineer_vote.html', {
-        'teams': teams,
-        'cards': cards,
-        'user': user,
-        'session': session,
+        'teams': available_teams,
+        'cards': available_health_cards,
+        'user': current_user,
+        'session': current_session,
     })
 
 
@@ -1397,88 +1602,212 @@ def tl_deactivate_session(request):
 
 # @login_required
 def tl_voting_guidance(request):
-    return render(request, 'tl_voting_guidance.html')
+    return render(request, 'tl_voting_guidance.html', {
+        'vote_url': 'tl-vote'
+    })
 
 
 @csrf_protect
 def tl_vote_page(request):
-    teams = Team.objects.all()
-    cards = HealthCard.objects.all()
-    active_session_id = request.session.get('tl_active_session_id')
-    user_id = request.session.get('user_id')
+    """
+    Handle team leader voting functionality for health check assessments.
+    
+    This function processes vote submissions from team leaders, including:
+    - Form validation and data sanitization
+    - Duplicate vote detection and updates
+    - New vote creation
+    - Session and user authentication checks
+    
+    Args:
+        request: HTTP request object containing form data and session info
+        
+    Returns:
+        Rendered template with success/error messages and form data
+        
+    Raises:
+        Http404: If user or session not found in database
+    """
+    # ========================================
+    # INITIAL DATA FETCHING AND VALIDATION
+    # ========================================
+    # Fetch all available teams and health cards for form dropdowns
+    available_teams = Team.objects.all()
+    available_health_cards = HealthCard.objects.all()
+    
+    # Get active session and user info from session storage
+    current_active_session_id = request.session.get('tl_active_session_id')
+    current_user_id = request.session.get('user_id')
 
-    if not user_id:
+    # ========================================
+    # AUTHENTICATION AND SESSION VALIDATION
+    # ========================================
+    # Check if user is logged in
+    if not current_user_id:
+        messages.error(request, "You must be logged in to submit votes.")
         return redirect('tl-login')
 
-    if not active_session_id:
+    # Check if user has an active session for voting
+    if not current_active_session_id:
+        messages.error(request, "Please activate a session before submitting votes.")
         return redirect('tl-manage-sessions')
 
-    user = get_object_or_404(User, user_id=user_id)
-    session = get_object_or_404(Session, session_id=active_session_id)
+    # Fetch user and session objects from database
+    try:
+        current_user = get_object_or_404(User, user_id=current_user_id)
+        current_session = get_object_or_404(Session, session_id=current_active_session_id)
+    except Http404 as e:
+        messages.error(request, "Invalid session or user data. Please log in again.")
+        return redirect('tl-login')
 
+    # ========================================
+    # FORM PROCESSING (POST REQUEST HANDLING)
+    # ========================================
     if request.method == 'POST':
-        team_id = request.POST.get('team')
-        card_id = request.POST.get('card')
-        vote_value = request.POST.get('vote_value')
-        progress_note = request.POST.get('progress_note', '')
+        try:
+            # Extract and sanitize form data
+            selected_team_id = request.POST.get('team')
+            selected_health_card_id = request.POST.get('card')
+            selected_vote_value = request.POST.get('vote_value')
+            selected_progress_trend = request.POST.get('progress_note', '').strip()
 
-        if not team_id or not card_id or not vote_value:
+            # ========================================
+            # FORM VALIDATION
+            # ========================================
+            # Check if all required fields are provided
+            if not all([selected_team_id, selected_health_card_id, selected_vote_value]):
+                messages.error(request, "All fields are required. Please fill in team, health card, and vote selection.")
+                return render(request, 'tl_vote.html', {
+                    'teams': available_teams,
+                    'cards': available_health_cards,
+                    'user': current_user,
+                    'session': current_session,
+                })
+
+            # Validate vote value is within acceptable range (1-3)
+            try:
+                vote_value_integer = int(selected_vote_value)
+                if vote_value_integer not in [1, 2, 3]:
+                    raise ValueError("Invalid vote value")
+            except (ValueError, TypeError):
+                messages.error(request, "Invalid vote selection. Please choose Green, Amber, or Red.")
+                return render(request, 'tl_vote.html', {
+                    'teams': available_teams,
+                    'cards': available_health_cards,
+                    'user': current_user,
+                    'session': current_session,
+                })
+
+            # Validate progress trend is one of the allowed values
+            allowed_progress_trends = ['Up trend', 'Down trend', 'No change']
+            if selected_progress_trend not in allowed_progress_trends:
+                messages.error(request, "Invalid progress trend selection.")
+                return render(request, 'tl_vote.html', {
+                    'teams': available_teams,
+                    'cards': available_health_cards,
+                    'user': current_user,
+                    'session': current_session,
+                })
+
+            # ========================================
+            # DATABASE OBJECT FETCHING
+            # ========================================
+            # Fetch team and health card objects from database
+            try:
+                selected_team = get_object_or_404(Team, pk=selected_team_id)
+                selected_health_card = get_object_or_404(HealthCard, pk=selected_health_card_id)
+            except Http404:
+                messages.error(request, "Selected team or health card not found. Please try again.")
+                return render(request, 'tl_vote.html', {
+                    'teams': available_teams,
+                    'cards': available_health_cards,
+                    'user': current_user,
+                    'session': current_session,
+                })
+
+            # ========================================
+            # DUPLICATE VOTE DETECTION AND HANDLING
+            # ========================================
+            # Check if user has already voted for this combination
+            existing_vote_record = Vote.objects.filter(
+                user=current_user,
+                session=current_session,
+                team=selected_team,
+                card=selected_health_card
+            ).first()
+
+            if existing_vote_record:
+                # ========================================
+                # UPDATE EXISTING VOTE
+                # ========================================
+                try:
+                    existing_vote_record.vote_value = vote_value_integer
+                    existing_vote_record.progress_note = selected_progress_trend
+                    existing_vote_record.save()
+                    
+                    messages.success(request, f"Your vote for {selected_health_card.title} has been updated successfully.")
+                    
+                except Exception as vote_update_error:
+                    # Log the error for debugging (in production, use proper logging)
+                    print(f"Error updating vote: {vote_update_error}")
+                    messages.error(request, "Failed to update your vote. Please try again.")
+                    
+            else:
+                # ========================================
+                # CREATE NEW VOTE RECORD
+                # ========================================
+                try:
+                    Vote.objects.create(
+                        user=current_user,
+                        session=current_session,
+                        team=selected_team,
+                        card=selected_health_card,
+                        vote_value=vote_value_integer,
+                        progress_note=selected_progress_trend,
+                        created_at=timezone.now()
+                    )
+                    
+                    messages.success(request, f"Your vote for {selected_health_card.title} has been submitted successfully.")
+                    
+                except Exception as vote_creation_error:
+                    # Log the error for debugging (in production, use proper logging)
+                    print(f"Error creating vote: {vote_creation_error}")
+                    messages.error(request, "Failed to submit your vote. Please try again.")
+
+            # ========================================
+            # SUCCESS RESPONSE
+            # ========================================
+            # Return the form with success message and current data
             return render(request, 'tl_vote.html', {
-                'teams': teams,
-                'cards': cards,
-                'error': 'All fields are required.',
-                'user': user,
-                'session': session,
+                'teams': available_teams,
+                'cards': available_health_cards,
+                'user': current_user,
+                'session': current_session,
             })
 
-        team = get_object_or_404(Team, pk=team_id)
-        card = get_object_or_404(HealthCard, pk=card_id)
-
-        existing_vote = Vote.objects.filter(
-            user=user,
-            session=session,
-            team=team,
-            card=card
-        ).first()
-
-        if existing_vote:
-            existing_vote.vote_value = vote_value
-            existing_vote.progress_note = progress_note
-            existing_vote.save()
-            messages.success(request, 'Your vote has been updated.')
-
+        except Exception as form_processing_error:
+            # ========================================
+            # GENERAL ERROR HANDLING
+            # ========================================
+            # Log the error for debugging (in production, use proper logging)
+            print(f"Unexpected error in vote processing: {form_processing_error}")
+            messages.error(request, "An unexpected error occurred. Please try again.")
+            
             return render(request, 'tl_vote.html', {
-                'teams': teams,
-                'cards': cards,
-                'success': 'Your vote has been updated.',
-                'user': user,
-                'session': session,
-            })
-        else:
-            Vote.objects.create(
-                user=user,
-                session=session,
-                team=team,
-                card=card,
-                vote_value=vote_value,
-                progress_note=progress_note,
-                created_at=timezone.now()
-            )
-            messages.success(request, 'Your vote has been submitted.')
-
-            return render(request, 'tl_vote.html', {
-                'teams': teams,
-                'cards': cards,
-                'success': 'Your vote has been submitted.',
-                'user': user,
-                'session': session,
+                'teams': available_teams,
+                'cards': available_health_cards,
+                'user': current_user,
+                'session': current_session,
             })
 
+    # ========================================
+    # GET REQUEST HANDLING (FORM DISPLAY)
+    # ========================================
+    # Display the voting form for GET requests
     return render(request, 'tl_vote.html', {
-        'teams': teams,
-        'cards': cards,
-        'user': user,
-        'session': session,
+        'teams': available_teams,
+        'cards': available_health_cards,
+        'user': current_user,
+        'session': current_session,
     })
 
 # @login_required

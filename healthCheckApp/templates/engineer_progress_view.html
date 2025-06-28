@@ -1,6 +1,9 @@
 {% extends 'engineer_base.html' %}
 
+<!-- Quick Actions -->
+
 {% block content %}
+{% include 'includes/engineer_quick_actions.html' with exclude_action='progress' %}
 <div class="container mt-5">
     <h2 class="mb-4">View Your Progress</h2>
 

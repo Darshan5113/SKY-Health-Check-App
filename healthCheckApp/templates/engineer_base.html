@@ -316,14 +316,10 @@
     <div class="flex-grow-1 content-area fade-in">
       {% block content %}{% endblock %}
     </div>
-
-    <!-- Logout bottom right -->
-    <div class="d-flex justify-content-end">
-      <a href="{% url 'logout-view' %}" class="btn btn-danger logout-btn">
-        <i class="fas fa-sign-out-alt me-2"></i>Logout
-      </a>
-    </div>
   </main>
+
+  <!-- Floating Logout Button -->
+  {% include 'includes/floating_logout_button.html' %}
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>

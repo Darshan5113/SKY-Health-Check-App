@@ -1,0 +1,185 @@
+<!-- Engineer Quick Actions -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">
+          <i class="fas fa-bolt me-2"></i>Quick Actions
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="quick-actions-container">
+          {% if exclude_action != 'dashboard' %}
+          <div class="quick-action-item">
+            <a href="/engineer/dashboard/" class="text-decoration-none">
+              <div class="card border-0 shadow-sm h-100 quick-action-card">
+                <div class="card-body text-center p-3">
+                  <div class="mb-3">
+                    <i class="fas fa-tachometer-alt fa-2x text-primary"></i>
+                  </div>
+                  <h6 class="card-title">Dashboard</h6>
+                  <p class="card-text small text-muted">View the Engineer's Dashboard</p>
+                </div>
+              </div>
+            </a>
+          </div>
+          {% endif %}
+
+          {% if exclude_action != 'sessions' %}
+          <div class="quick-action-item">
+            <a href="/engineer/sessions/" class="text-decoration-none">
+              <div class="card border-0 shadow-sm h-100 quick-action-card">
+                <div class="card-body text-center p-3">
+                  <div class="mb-3">
+                    <i class="fas fa-calendar-alt fa-2x text-primary"></i>
+                  </div>
+                  <h6 class="card-title">Select Sessions</h6>
+                  <p class="card-text small text-muted">Choose and manage your active sessions</p>
+                </div>
+              </div>
+            </a>
+          </div>
+          {% endif %}
+
+          {% if exclude_action != 'vote' %}
+          <div class="quick-action-item">
+            <a href="/engineers/guidance/" class="text-decoration-none">
+              <div class="card border-0 shadow-sm h-100 quick-action-card">
+                <div class="card-body text-center p-3">
+                  <div class="mb-3">
+                    <i class="fas fa-vote-yea fa-2x text-success"></i>
+                  </div>
+                  <h6 class="card-title">Vote for Team</h6>
+                  <p class="card-text small text-muted">Cast your votes for team health checks</p>
+                </div>
+              </div>
+            </a>
+          </div>
+          {% endif %}
+
+          {% if exclude_action != 'summary' %}
+          <div class="quick-action-item">
+            <a href="/engineers/team-summary/" class="text-decoration-none">
+              <div class="card border-0 shadow-sm h-100 quick-action-card">
+                <div class="card-body text-center p-3">
+                  <div class="mb-3">
+                    <i class="fas fa-chart-bar fa-2x text-info"></i>
+                  </div>
+                  <h6 class="card-title">View Summary</h6>
+                  <p class="card-text small text-muted">Check team performance summaries</p>
+                </div>
+              </div>
+            </a>
+          </div>
+          {% endif %}
+
+          {% if exclude_action != 'progress' %}
+          <div class="quick-action-item">
+            <a href="{% url 'engineer_progress_form' %}" class="text-decoration-none">
+              <div class="card border-0 shadow-sm h-100 quick-action-card">
+                <div class="card-body text-center p-3">
+                  <div class="mb-3">
+                    <i class="fas fa-tasks fa-2x text-warning"></i>
+                  </div>
+                  <h6 class="card-title">Update Progress</h6>
+                  <p class="card-text small text-muted">Submit your progress reports</p>
+                </div>
+              </div>
+            </a>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .quick-actions-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    width: 100%;
+  }
+
+  .quick-action-item {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .quick-action-card {
+    transition: all 0.3s ease;
+    cursor: pointer;
+    height: 100%;
+  }
+
+  .quick-action-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
+  }
+
+  /* Ensure consistent card heights and text alignment */
+  .quick-action-card .card-body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 120px;
+  }
+
+  .quick-action-card .card-title {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  .quick-action-card .card-text {
+    font-size: 0.75rem;
+    line-height: 1.2;
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 1200px) {
+    .quick-action-item {
+      max-width: calc(25% - 0.75rem);
+    }
+    .fa-2x {
+      font-size: 1.5em;
+    }
+  }
+
+  @media (max-width: 992px) {
+    .quick-action-item {
+      max-width: calc(33.333% - 0.67rem);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .quick-action-item {
+      max-width: calc(50% - 0.5rem);
+    }
+    .fa-2x {
+      font-size: 1.5em;
+    }
+    .card-body {
+      padding: 1rem;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .quick-action-item {
+      max-width: 100%;
+    }
+    .card-body {
+      padding: 0.75rem;
+    }
+    .d-flex.align-items-center.justify-content-center {
+      flex-direction: column;
+      text-align: center;
+    }
+    .d-flex.align-items-center.justify-content-center i {
+      margin-bottom: 0.5rem;
+      margin-right: 0 !important;
+    }
+  }
+</style> 
