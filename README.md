@@ -92,41 +92,41 @@ A comprehensive Django-based health check system designed for organizations to m
 - Git
 
 ### Step 1: Clone the Repository
-\\\ash
+```sh
 git clone <repository-url>
 cd healthCheckApp
-\\\
+```
 
 ### Step 2: Install Dependencies
-\\\ash
+```sh
 pip install -r requirements.txt
-\\\
+```
 
 ### Step 3: Database Setup
-\\\ash
+```sh
 # Run migrations
 python manage.py makemigrations
 python manage.py migrate
 
 # Create superuser (optional)
 python manage.py createsuperuser
-\\\
+```
 
 ### Step 4: Run the Application
-\\\ash
+```sh
 # Development server
 python manage.py runserver
-\\\
+```
 
 The application will be available at \http://127.0.0.1:8000/\
 
 ##  Database Setup
 
 ### Initial Data Population
-\\\ash
+```sh
 # Run the seed data command to populate initial data
 python manage.py seed_data
-\\\
+```
 
 ### Database Models
 - **User**: User accounts with role-based access
@@ -267,10 +267,8 @@ healthCheckApp/
 ##  Deployment
 
 ### Development
-\\\ash
+```sh
 python manage.py runserver
-\\\
+```
 
 ---
-
-**Made with  for better team health monitoring**
