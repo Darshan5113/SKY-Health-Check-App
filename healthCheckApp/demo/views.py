@@ -1,11 +1,36 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.http import Http404, HttpResponse
-from .models import Team, User, Department, HealthCard, Session
-from django.utils import timezone
-from datetime import datetime
-from django.contrib import messages
-from django.views.decorators.csrf import csrf_protect
+# Standard library imports
+import io
 import logging
+import re
+from datetime import datetime
+
+# Third-party imports
+import base64
+import matplotlib
+matplotlib.use('Agg')  # Use a non-interactive backend
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+
+# Django imports
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.db.models import Avg
+from django.http import Http404, HttpResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+from django.views.decorators.csrf import csrf_protect
+
+# Local application imports
+from .forms import UserUpdateForm
+from .models import (
+    Department,
+    HealthCard,
+    ProgressSummary,
+    Session,
+    Team,
+    User,
+    Vote
+)
 
 # Configure logger for error tracking
 logger = logging.getLogger(__name__)
@@ -119,7 +144,6 @@ def is_valid_email(email_address):
     Returns:
         bool: True if email format is valid, False otherwise
     """
-    import re
     email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     return re.match(email_pattern, email_address) is not None
 
@@ -133,7 +157,6 @@ def is_valid_username(username):
     Returns:
         bool: True if username format is valid, False otherwise
     """
-    import re
     username_pattern = r'^[a-zA-Z0-9_]+$'
     return re.match(username_pattern, username) is not None and len(username) >= 3
 
@@ -996,11 +1019,6 @@ def engineers_dashboard(request):
         }
         return render(request, 'engineer_dashboard.html', context)
 
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
-from django.utils import timezone
-from .models import Session
-from django.views.decorators.csrf import csrf_protect
 @csrf_protect
 def engineer_manage_sessions(request):
     """
@@ -1128,12 +1146,6 @@ def voting_guidance(request):
         'vote_url': 'vote-page'
     })
 
-from django.shortcuts import render, redirect, get_object_or_404
-from django.http import Http404
-from .models import Session, Team, HealthCard, Vote, User
-from django.contrib import messages
-from django.views.decorators.csrf import csrf_protect
-from django.utils import timezone
 
 @csrf_protect
 def vote_page(request):
@@ -1474,7 +1486,6 @@ def profile_update(request):
                     # Handle database save errors
                     print(f"Error saving profile update: {save_error}")
                     messages.error(request, "Failed to save profile changes. Please try again.")
-                    
             else:
                 # ========================================
                 # FORM VALIDATION ERROR HANDLING
@@ -1510,28 +1521,6 @@ def profile_update(request):
         'user': current_user,
         'page_title': 'Update Profile'
     })
-
-import matplotlib
-matplotlib.use('Agg')  # Use a non-interactive backend
-from django.contrib import messages
-from django.utils import timezone
-from django.shortcuts import render, redirect, get_object_or_404
-from .models import Vote, HealthCard, Session, User
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-
-from django.contrib.auth.decorators import login_required
-from django.views.decorators.csrf import csrf_protect
-import io, base64
-
-# @login_required
-from django.views.decorators.csrf import csrf_protect
-from django.shortcuts import render, redirect, get_object_or_404
-from .models import User, Session, Vote, HealthCard
-import io
-import base64
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-import matplotlib.pyplot as plt
 
 @csrf_protect
 def team_summary(request):
@@ -1847,10 +1836,6 @@ def team_summary(request):
 
 def tl_dashboard(request):
     return render(request, 'tl_dashboard.html')
-from django.shortcuts import render, redirect, get_object_or_404
-from django.views.decorators.csrf import csrf_protect
-from django.contrib import messages
-from .models import Session, User
 
 @csrf_protect
 def tl_manage_sessions(request):
@@ -2292,13 +2277,6 @@ def team_leader_summary(request):
     'no_sessions': False,
 })
 
-
-
-
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
-from .models import User
-
 # @login_required
 def team_leader_profile_view(request):
     # Get the user_id from the session
@@ -2315,10 +2293,6 @@ def team_leader_profile_view(request):
     # Pass the user data to the template
     return render(request, 'tl_profile.html', {'user': user})
 
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
-from .forms import UserUpdateForm
-from .models import User
 # @login_required
 def team_leader_profile_update(request):
     user_id = request.session.get('user_id')  # Get user from session
@@ -2349,17 +2323,6 @@ def team_leader_profile_update(request):
     print(form.fields)  # Print form fields for debugging
 
     return render(request, 'tl_update_profile.html', {'form': form, 'user': user})
-
-from django.db.models import Avg
-from .models import Vote, ProgressSummary, HealthCard, Session, Team
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import redirect, render, get_object_or_404
-from django.contrib import messages
-from .models import Team, Session, User  # make sure User is imported
-# from .utils import generate_progress_summary  # assuming logic lives here
-
-from django.db.models import Avg
-from .models import Vote, ProgressSummary, HealthCard, Team, Session
 
 def generate_progress_summary(team_id, session_id):
     team = Team.objects.get(pk=team_id)
@@ -2456,10 +2419,6 @@ def generate_summary_view(request):
     })
 
 
-from django.shortcuts import render, get_object_or_404
-from .models import ProgressSummary, HealthCard, Team, Session
-from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse
 # @login_required
 
 def engineer_progress_form(request):
@@ -2565,7 +2524,7 @@ def engineer_progress_form(request):
             # Fetch selected health card and session objects
             selected_health_card = get_object_or_404(HealthCard, pk=selected_health_card_id)
             selected_session = get_object_or_404(Session, pk=selected_session_id)
-            
+
         except Http404 as not_found_error:
             # Handle case where health card or session doesn't exist
             messages.error(request, "Selected health card or session not found. Please try again.")
@@ -2649,17 +2608,6 @@ def engineer_progress_form(request):
     # ========================================
     # Render the engineer progress view template with prepared context
     return render(request, 'engineer_progress_view.html', template_context)
-
-from django.shortcuts import render, get_object_or_404
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-from django.db.models import Avg
-from .models import ProgressSummary, HealthCard, Team, Session, Vote, User
-
-
-from django.shortcuts import get_object_or_404
-from django.db.models import Avg
-from .models import Vote, ProgressSummary, Session, HealthCard, Team
 
 def generate_department_progress_summary(department_id, session_id):
     session = get_object_or_404(Session, pk=session_id)
@@ -2748,11 +2696,6 @@ def generate_department_progress_summary(department_id, session_id):
 
     return has_votes
 
-from django.shortcuts import render, get_object_or_404
-from django.contrib import messages
-from .models import Session, Vote, ProgressSummary, HealthCard, Team, User
-# from .utils import generate_department_progress_summary  # or wherever it's defined
-
 def dl_generate_summary_view(request):
     summaries = []
     dept_summaries = []
@@ -2798,14 +2741,6 @@ def dl_generate_summary_view(request):
         'selected_session': selected_session,
     })
 
-
-from django.views.decorators.csrf import csrf_protect
-from django.shortcuts import render, get_object_or_404, redirect
-from .models import User, Session, HealthCard, Vote
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-import io
-import base64
 @csrf_protect
 def department_leader_summary(request):
     user_id = request.session.get('user_id')
@@ -2927,15 +2862,6 @@ def department_leader_summary(request):
         'chart_img': chart_img,
         'no_votes': no_votes
     })
-
-from django.shortcuts import render, get_object_or_404, redirect
-from .models import User, Department, Session, HealthCard, Vote
-from django.http import HttpResponse
-from django.views.decorators.csrf import csrf_protect
-import io
-import base64
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
 @csrf_protect
 def senior_manager_summary(request):
@@ -3083,10 +3009,6 @@ def senior_manager_summary(request):
     })
 
 
-from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
-from .models import Department, Team, Session, HealthCard, ProgressSummary
-
 # @login_required
 def senior_manager_progress_summary(request):
     user = request.user  # Assuming user is authenticated and is a senior manager
@@ -3141,12 +3063,6 @@ def senior_manager_progress_summary(request):
 
     return render(request, 'sm_progress.html', context)
 
-from django.shortcuts import render, redirect
-from django.contrib import messages
-# from django.contrib.admin.views.decorators import staff_member_required
-from django.db.models import Avg
-from .models import Department, Team, Session, HealthCard, Vote, ProgressSummary
-
 def get_vote_category(avg_score):
     if avg_score >= 2.5:
         return 'Red'
@@ -3172,8 +3088,6 @@ def get_progress_trend(team, card, session, current_vote):
         except ProgressSummary.DoesNotExist:
             continue
     return None  # No previous summary found → No Change
-from django.db.models import Avg
-from django.contrib import messages
 
 def admin_progress_summary_combined(request):
     if request.method == 'POST':

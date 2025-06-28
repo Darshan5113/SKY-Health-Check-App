@@ -43,10 +43,10 @@
       </div>
     </div>
   </div>
-</div>
+    </div>
 
 <!-- Team Progress Section -->
-{% if view_mode == 'team' %}
+    {% if view_mode == 'team' %}
 <div class="row">
   <div class="col-12">
     <div class="progress-form-card">
@@ -57,7 +57,7 @@
       </div>
       <div class="card-body">
         <form method="get" class="progress-filter-form">
-          <input type="hidden" name="view" value="team">
+            <input type="hidden" name="view" value="team">
           <div class="row g-3">
             <div class="col-lg-5 col-md-6">
               <div class="form-group">
@@ -66,13 +66,13 @@
                 </label>
                 <select name="session_id" class="form-select" required>
                   <option value="">Choose a session...</option>
-                  {% for session in sessions %}
-                    <option value="{{ session.session_id }}" {% if session.session_id == selected_session_id %}selected{% endif %}>
-                      {{ session.date }}
-                    </option>
-                  {% endfor %}
-                </select>
-              </div>
+                        {% for session in sessions %}
+                            <option value="{{ session.session_id }}" {% if session.session_id == selected_session_id %}selected{% endif %}>
+                                {{ session.date }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
             </div>
             <div class="col-lg-5 col-md-6">
               <div class="form-group">
@@ -81,13 +81,13 @@
                 </label>
                 <select name="card_id" class="form-select" required>
                   <option value="">Choose a health card...</option>
-                  {% for card in cards %}
-                    <option value="{{ card.card_id }}" {% if card.card_id == selected_card_id %}selected{% endif %}>
-                      {{ card }}
-                    </option>
-                  {% endfor %}
-                </select>
-              </div>
+                        {% for card in cards %}
+                            <option value="{{ card.card_id }}" {% if card.card_id == selected_card_id %}selected{% endif %}>
+                                {{ card }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
             </div>
             <div class="col-lg-2 col-md-12">
               <div class="form-group d-flex align-items-end">
@@ -95,8 +95,8 @@
                   <i class="fas fa-search me-2"></i>View Progress
                 </button>
               </div>
+                </div>
             </div>
-          </div>
         </form>
       </div>
     </div>
@@ -104,10 +104,10 @@
 </div>
 
 <!-- Progress Results -->
-{% if show_results %}
+        {% if show_results %}
 <div class="row mt-4">
   <div class="col-12">
-    {% if summary %}
+            {% if summary %}
       <div class="progress-result-card">
         <div class="result-header">
           <div class="result-icon">
@@ -133,8 +133,8 @@
                       {% if summary.overall_vote == 'Green' %}vote-green
                       {% elif summary.overall_vote == 'Yellow' %}vote-yellow
                       {% else %}vote-red{% endif %}">
-                      {{ summary.overall_vote }}
-                    </span>
+                            {{ summary.overall_vote }}
+                        </span>
                   </div>
                 </div>
               </div>
@@ -148,15 +148,15 @@
                 <div class="metric-content">
                   <h6 class="metric-label">Progress Trend</h6>
                   <div class="metric-value">
-                    {% if summary.progress_trend %}
+                        {% if summary.progress_trend %}
                       <span class="trend-badge trend-up">
                         <i class="fas fa-arrow-up me-1"></i>Up Trend
                       </span>
-                    {% else %}
+                        {% else %}
                       <span class="trend-badge trend-down">
                         <i class="fas fa-arrow-down me-1"></i>Down Trend
                       </span>
-                    {% endif %}
+                        {% endif %}
                   </div>
                 </div>
               </div>
@@ -189,8 +189,8 @@
                     <span class="note-label">Progress Note:</span>
                     <span class="note-text">{{ engineer_vote.progress_note }}</span>
                   </div>
-                {% endif %}
-              </div>
+                    {% endif %}
+                </div>
             {% else %}
               <p class="text-muted">
                 <i class="fas fa-info-circle me-1"></i>
@@ -213,10 +213,10 @@
     {% endif %}
   </div>
 </div>
-{% endif %}
+        {% endif %}
 
 <!-- Vote History Section -->
-{% elif view_mode == 'history' %}
+        {% elif view_mode == 'history' %}
 <div class="row">
   <div class="col-12">
     <div class="history-card">
@@ -282,7 +282,7 @@
         </div>
 
         <!-- History Table -->
-        {% if vote_history %}
+            {% if vote_history %}
           <div class="table-responsive">
             <table class="table table-hover history-table" id="historyTable">
               <thead class="table-light">
@@ -307,10 +307,10 @@
                     <i class="fas fa-clock me-1"></i>Voted At
                     <i class="fas fa-sort sort-icon"></i>
                   </th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for vote in vote_history %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for vote in vote_history %}
                   <tr class="vote-row" 
                       data-team="{{ vote.team.name|lower }}"
                       data-card="{{ vote.card|lower }}"
@@ -328,24 +328,24 @@
                     <td>
                       <span class="card-name">{{ vote.card }}</span>
                     </td>
-                    <td>
-                      {% if vote.vote_value == 3 %}
+                                <td>
+                                    {% if vote.vote_value == 3 %}
                         <span class="vote-badge vote-red">Red</span>
-                      {% elif vote.vote_value == 2 %}
+                                    {% elif vote.vote_value == 2 %}
                         <span class="vote-badge vote-yellow">Yellow</span>
-                      {% elif vote.vote_value == 1 %}
+                                    {% elif vote.vote_value == 1 %}
                         <span class="vote-badge vote-green">Green</span>
-                      {% else %}
+                                    {% else %}
                         <span class="vote-badge vote-unknown">Unknown</span>
-                      {% endif %}
-                    </td>
+                                    {% endif %}
+                                </td>
                     <td>
                       <span class="vote-time">{{ vote.created_at|date:"Y-m-d H:i" }}</span>
                     </td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
           </div>
           
           <!-- Results Summary -->
@@ -371,7 +371,7 @@
               </div>
             </div>
           </div>
-        {% else %}
+            {% else %}
           <div class="no-data-card">
             <div class="no-data-icon">
               <i class="fas fa-inbox"></i>
@@ -379,13 +379,13 @@
             <h5 class="no-data-title">No Voting History</h5>
             <p class="no-data-message">You haven't submitted any votes yet.</p>
           </div>
-        {% endif %}
+            {% endif %}
       </div>
     </div>
   </div>
-</div>
-{% endif %}
-
+        </div>
+    {% endif %}
+    
 <style>
 /* Enhanced Page Header */
 .progress-header-card {
